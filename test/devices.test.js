@@ -1,152 +1,162 @@
+// The Gladys device of a Roku: which features, for which model.
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { parseApps, parseDeviceInfo } from '../src/ecp/parse.js';
 import {
-  DEVICE_FEATURE_CATEGORIES,
-  DEVICE_FEATURE_TYPES,
-  DEVICE_TRANSPORTS,
-} from '@gladysassistant/integration-sdk';
-import {
-  DEVICE_BLUEPRINTS,
-  buildDiscoveredDevices,
-  buildTransportEntries,
-  findBlueprintByDevice,
-  identifyDevice,
-} from '../src/devices/index.js';
-import { simulateLanSession } from '../src/devices/plug.js';
-import { normalizeConfig } from '../src/config.js';
+  REMOTE_KEYS,
+  appOptions,
+  buildRokuDevice,
+  featureKey,
+  inputKey,
+  inputOptions,
+  rokuStates,
+  serialFromExternalId,
+} from '../src/devices/roku.js';
 import { createFakeGladys } from './helpers/fakeGladys.js';
+import { fixture } from './helpers/fakeRoku.js';
 
 const gladys = createFakeGladys();
-const config = normalizeConfig();
 
-test('every blueprint exposes the required shape', () => {
-  for (const bp of DEVICE_BLUEPRINTS) {
-    assert.equal(typeof bp.key, 'string', 'key must be a string');
-    assert.equal(typeof bp.deviceExternalId, 'function', 'deviceExternalId must be a function');
-    assert.equal(typeof bp.buildDevice, 'function', 'buildDevice must be a function');
-  }
-});
+function roku(deviceInfo, apps) {
+  const info = parseDeviceInfo(fixture(deviceInfo));
+  return {
+    serial: info.serial,
+    ip: '192.0.2.10',
+    mac: info.mac,
+    info,
+    apps: parseApps(fixture(apps)),
+    state: {},
+    reachable: true,
+  };
+}
 
-test('buildDiscoveredDevices returns one payload per blueprint', () => {
-  const devices = buildDiscoveredDevices(gladys, config);
-  assert.equal(devices.length, DEVICE_BLUEPRINTS.length);
-  for (const device of devices) {
-    assert.equal(typeof device.name, 'string');
-    assert.ok(device.external_id, 'each device has an external_id');
-    assert.ok(Array.isArray(device.features) && device.features.length > 0);
-  }
-});
-
-test('device external_ids are unique across the catalog', () => {
-  const devices = buildDiscoveredDevices(gladys, config);
-  const ids = devices.map((d) => d.external_id);
-  assert.equal(new Set(ids).size, ids.length, 'no two devices may share an external_id');
-});
-
-test('findBlueprintByDevice routes an external_id back to its owner blueprint', () => {
-  for (const bp of DEVICE_BLUEPRINTS) {
-    const external_id = bp.deviceExternalId(gladys);
-    const found = findBlueprintByDevice(gladys, { external_id });
-    assert.equal(found, bp);
-  }
-});
-
-test('findBlueprintByDevice returns undefined for an unknown device', () => {
-  const found = findBlueprintByDevice(gladys, { external_id: 'does-not-exist' });
-  assert.equal(found, undefined);
-});
-
-test('manifest action keys are unique across blueprints', () => {
-  const keys = DEVICE_BLUEPRINTS.flatMap((bp) => Object.keys(bp.actions ?? {}));
-  assert.equal(new Set(keys).size, keys.length, 'no two blueprints may register the same action');
-});
-
-test('the camera declares a camera/image feature', () => {
-  const cameraBlueprint = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'camera');
-  const device = cameraBlueprint.buildDevice(gladys, config);
-  const imageFeature = device.features.find((f) => f.category === DEVICE_FEATURE_CATEGORIES.CAMERA);
-  assert.ok(imageFeature, 'the camera must carry a camera feature');
-  assert.equal(imageFeature.type, DEVICE_FEATURE_TYPES.CAMERA.IMAGE);
-  assert.equal(imageFeature.read_only, true);
-});
-
-test('onGetImage resolves a base64 JPEG under the 150 KB limit', async () => {
-  const cameraBlueprint = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'camera');
-  const image = await cameraBlueprint.onGetImage(gladys, {
-    device: { external_id: cameraBlueprint.deviceExternalId(gladys) },
-    config,
-  });
-  assert.match(image, /^image\/jpg;base64,/);
-  assert.ok(image.length <= 150 * 1024, 'the image must stay under 150 KB');
-});
-
-test('buildTransportEntries reports one valid entry per dual-channel device', () => {
-  const entries = buildTransportEntries(gladys, config);
-  assert.ok(entries.length > 0, 'the demo plug reports its transport');
-  const validValues = Object.values(DEVICE_TRANSPORTS);
-  for (const entry of entries) {
-    assert.ok(entry.external_id, 'each entry targets a device external_id');
-    assert.ok(validValues.includes(entry.transport), `invalid transport: ${entry.transport}`);
-  }
-});
-
-test('the demo plug honors the GLADYS_PREFER_LOCAL preference', () => {
-  const local = buildTransportEntries(gladys, normalizeConfig({ GLADYS_PREFER_LOCAL: true }));
-  const cloud = buildTransportEntries(gladys, normalizeConfig({ GLADYS_PREFER_LOCAL: false }));
-  const plugId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'plug').deviceExternalId(gladys);
-  assert.equal(local.find((e) => e.external_id === plugId).transport, DEVICE_TRANSPORTS.LOCAL);
-  assert.equal(cloud.find((e) => e.external_id === plugId).transport, DEVICE_TRANSPORTS.CLOUD);
-});
-
-test('nominal transport entries never carry a leftover degraded flag', () => {
-  const entries = buildTransportEntries(gladys, config);
-  for (const entry of entries) {
-    assert.equal(entry.degraded, undefined, 'nominal entries must clear the degraded state');
-  }
-});
-
-test('the plug reports a degraded cloud fallback when the LAN session is refused', () => {
-  const plugId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'plug').deviceExternalId(gladys);
-  simulateLanSession(false);
-  try {
-    const entries = buildTransportEntries(gladys, normalizeConfig({ GLADYS_PREFER_LOCAL: true }));
-    const entry = entries.find((e) => e.external_id === plugId);
-    assert.equal(entry.transport, DEVICE_TRANSPORTS.CLOUD, 'falls back to cloud');
-    assert.equal(entry.degraded, true, 'the fallback is flagged degraded');
-    assert.ok(entry.message.en, 'the reason carries at least the mandatory `en` text');
-    assert.ok(entry.message.en.length <= 200, 'tooltip messages are capped at 200 characters');
-  } finally {
-    simulateLanSession(true);
-  }
-});
-
-test('identifyDevice signals a device that implements identify', async () => {
-  const lightId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'light').deviceExternalId(gladys);
-  const message = await identifyDevice(gladys, lightId, config);
-  assert.match(message.en, /signalling/);
-  assert.ok(message.fr, 'the message is multi-language');
-});
-
-test('identifyDevice explains when the device has no way to signal itself', async () => {
-  const weatherId = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'weather-station').deviceExternalId(
-    gladys,
+const keysOf = (device) =>
+  device.features.map(
+    (feature) => device.external_id && featureKey(device.external_id, feature.external_id),
   );
-  const message = await identifyDevice(gladys, weatherId, config);
-  assert.match(message.en, /no way to signal/);
+
+test('a Roku player: read-only power, apps, playback, navigation and playback keys', () => {
+  const device = buildRokuDevice(gladys, roku('device-info-box.xml', 'apps.xml'));
+  assert.equal(device.name, 'My Roku 3');
+  assert.equal(device.external_id, 'ext:roku-test:roku:BOX000000001');
+  assert.equal(device.should_poll, true);
+  assert.equal(device.poll_frequency, 10000);
+  assert.deepEqual(keysOf(device), [
+    'power',
+    'app',
+    'playback',
+    'key:home',
+    'key:back',
+    'key:up',
+    'key:down',
+    'key:left',
+    'key:right',
+    'key:select',
+    'key:info',
+    'key:play',
+    'key:rewind',
+    'key:forward',
+    'key:replay',
+  ]);
+  const power = device.features[0];
+  assert.equal(power.read_only, true, 'a player cannot be powered from ECP');
+  assert.equal(power.category, 'television');
+  assert.equal(power.type, 'binary');
 });
 
-test('the test_weather action returns a multi-language message', async () => {
-  const realFetch = globalThis.fetch;
-  globalThis.fetch = async () => ({
-    ok: true,
-    json: async () => ({ current: { temperature_2m: 21.4, relative_humidity_2m: 55 } }),
-  });
-  try {
-    const weatherStation = DEVICE_BLUEPRINTS.find((bp) => bp.key === 'weather-station');
-    const message = await weatherStation.actions.test_weather(gladys, { fields: {}, config });
-    assert.match(message.en, /21\.4/);
-    assert.match(message.fr, /21\.4/);
-  } finally {
-    globalThis.fetch = realFetch;
+test('a Roku TV adds power, volume and mute keys, the input select and the channel keys', () => {
+  const device = buildRokuDevice(gladys, roku('device-info-tv.xml', 'apps-tv.xml'));
+  const keys = keysOf(device);
+  for (const key of [
+    'input',
+    'key:volume_up',
+    'key:volume_down',
+    'key:volume_mute',
+    'key:channel_up',
+  ]) {
+    assert.ok(keys.includes(key), `${key} missing`);
   }
+  const power = device.features.find((feature) => feature.external_id.endsWith(':power'));
+  assert.equal(power.read_only, false);
+  assert.equal(power.has_feedback, true);
+  // ECP has no absolute volume: no volume level feature, keys only.
+  assert.ok(!device.features.some((feature) => feature.type === 'volume'));
+});
+
+test('a Roku TV without tuner has no channel keys', () => {
+  const tv = roku('device-info-tv.xml', 'apps-tv.xml');
+  tv.info.hasTuner = false;
+  const keys = keysOf(buildRokuDevice(gladys, tv));
+  assert.ok(!keys.includes('key:channel_up'));
+});
+
+test('text selects: min/max 0, string options without duplicates, inputs apart', () => {
+  const apps = parseApps(fixture('apps-tv.xml'));
+  const options = appOptions(apps);
+  assert.deepEqual(options[0], { value: 'home', label: 'Home', sort_order: 0 });
+  assert.ok(options.every((option) => typeof option.value === 'string'));
+  assert.ok(!options.some((option) => option.value.startsWith('tvinput.')));
+  assert.equal(new Set(options.map((option) => option.value)).size, options.length);
+  assert.deepEqual(
+    inputOptions(apps).map((option) => option.value),
+    ['home', 'tvinput.hdmi2', 'tvinput.hdmi1', 'tvinput.dtv'],
+  );
+  const device = buildRokuDevice(gladys, roku('device-info-tv.xml', 'apps-tv.xml'));
+  for (const feature of device.features.filter((f) => f.category === 'text')) {
+    assert.equal(feature.min, 0);
+    assert.equal(feature.max, 0);
+    assert.equal(feature.keep_history, false);
+  }
+  // A Roku that did not list its apps yet still offers Home.
+  assert.deepEqual(
+    appOptions(null).map((option) => option.value),
+    ['home'],
+  );
+});
+
+test('remote keys are push buttons of the television category with distinct ECP keys', () => {
+  assert.equal(new Set(REMOTE_KEYS.map((entry) => entry.key)).size, REMOTE_KEYS.length);
+  assert.equal(new Set(REMOTE_KEYS.map((entry) => entry.type)).size, REMOTE_KEYS.length);
+  assert.ok(!REMOTE_KEYS.some((entry) => ['binary', 'volume', 'channel'].includes(entry.type)));
+  assert.equal(inputKey('tvinput.hdmi3'), 'InputHDMI3');
+  assert.equal(inputKey('tvinput.dtv'), 'InputTuner');
+  assert.equal(inputKey('12'), undefined);
+});
+
+test('external ids give the serial and the feature key back', () => {
+  assert.equal(serialFromExternalId('ext:roku-test:roku:TVX000000003'), 'TVX000000003');
+  assert.equal(serialFromExternalId('ext:roku-test:roku:TVX000000003:key:home'), 'TVX000000003');
+  assert.equal(serialFromExternalId('ext:roku-test:plug:1'), null);
+  assert.equal(serialFromExternalId(undefined), null);
+  assert.equal(featureKey('ext:a:roku:1', 'ext:a:roku:1:key:home'), 'key:home');
+  assert.equal(featureKey('ext:a:roku:1', 'ext:a:roku:2:power'), null);
+});
+
+test('states: never a guess', () => {
+  const tv = roku('device-info-tv.xml', 'apps-tv.xml');
+  const ids = gladys.externalIds('roku', tv.serial);
+  // Nothing read yet: nothing published.
+  tv.reachable = null;
+  assert.deepEqual(rokuStates(gladys, tv), []);
+  // On, a streaming app in the foreground: app + input "Roku (streaming)".
+  tv.reachable = true;
+  tv.state = { poweredOn: true, playing: true, app: { id: '12', name: 'Netflix', home: false } };
+  assert.deepEqual(rokuStates(gladys, tv), [
+    { device_feature_external_id: ids.feature('power'), state: 1 },
+    { device_feature_external_id: ids.feature('playback'), state: 1 },
+    { device_feature_external_id: ids.feature('app'), text: '12' },
+    { device_feature_external_id: ids.feature('input'), text: 'home' },
+  ]);
+  // Playback unknown (buffering): left out.
+  tv.state.playing = undefined;
+  assert.ok(
+    !rokuStates(gladys, tv).some((s) => s.device_feature_external_id.endsWith(':playback')),
+  );
+  // Unreachable: off.
+  tv.reachable = false;
+  assert.deepEqual(rokuStates(gladys, tv), [
+    { device_feature_external_id: ids.feature('power'), state: 0 },
+    { device_feature_external_id: ids.feature('playback'), state: 0 },
+  ]);
 });

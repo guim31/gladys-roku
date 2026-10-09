@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Adapted from python-rokuecp (MIT, (c) Chris Talkington), anonymized: serial numbers, ids and MAC addresses are fake. -->
+<active-app>
+    <app id="tvinput.dtv" type="tvin" version="1.0.0">Antenna TV</app>
+</active-app>

@@ -1,59 +1,162 @@
-# Demo Devices Template
+# Roku
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Control your **Roku streaming players** (Express, Streaming Stick, Ultra…) and
+your **Roku TVs** (TCL, Hisense, onn., Sharp, Philips, Westinghouse, Roku-made
+TVs…) from Gladys: power, the app on screen, playback, remote keys, volume and
+inputs, on the dashboard and in your scenes.
+
+Everything stays **on your home network**: Gladys talks to the Roku with the
+External Control Protocol (ECP) Roku documents for its devices. No Roku
+account, no cloud, no API key.
+
+> **Developed without the hardware: feedback welcome.** This integration was
+> built from Roku's documentation and from real answers of Roku devices
+> recorded by other open-source projects, not on a Roku in a living room. If
+> something does not work as described here, please open an issue (see
+> [Reporting a problem](#reporting-a-problem)): it will get fixed fast.
+
+## Before you start: allow control from your network
+
+Recent versions of Roku OS block control from other devices by default. On
+**each** Roku:
+
+1. Press **Home** on the Roku remote, open **Settings > System > Advanced
+   system settings > Control by mobile apps**.
+2. Open **Network access** and choose **Enabled**.
+   - **Limited** (the default on recent Roku OS versions) only allows
+     launching apps and typing text: the remote keys are refused, and
+     depending on the Roku OS version, so is what Gladys reads.
+   - **Disabled** refuses everything.
+   - **Permissive** works too, but opens the Roku to any device, even outside
+     your network: **Enabled** is enough for Gladys.
+
+On a **Roku TV**, also turn on **Settings > System > Power > Fast TV start**.
+Without it, a TV in standby goes deaf to the network: Gladys can neither turn
+it on nor tell that it is off rather than unplugged.
+
+Give each Roku a fixed address in your router (a "DHCP reservation"): Gladys
+finds a Roku that changed address again, but it takes a scan.
+
+## Installation
+
+1. Install the **Roku** integration from the integration store of Gladys.
+2. Open its **Discovery** tab and run a scan: every Roku on the same network
+   as Gladys answers within a few seconds.
+3. Click **Add to Gladys** on each Roku you want. Done.
+
+A Roku the scan does not find (another subnet or VLAN, a mesh network that
+filters discovery…)? In the **Configuration** tab, type its IP address in
+**Roku addresses** (several addresses separated by commas), save, and scan
+again. The **Test the connection to a Roku** action takes an address too: it
+tells you right away whether the Roku answers and accepts control, and adds it
+to the Discovery tab when it does.
+
+The address of a Roku is shown on the Roku in **Settings > Network > About**.
 
 ## What you get
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+Each Roku becomes one Gladys device:
 
-## Configuration
+| Feature     | Roku players                                                                           | Roku TVs                                                                                   |
+| ----------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Power       | state (on / standby)                                                                   | on / off, and its state                                                                    |
+| Application | the app on screen, and a list to open another one (or Home)                            | same                                                                                       |
+| Input       | –                                                                                      | HDMI 1-4, antenna (Live TV), AV, or Roku streaming, with the names you gave them on the TV |
+| Playback    | playing or not                                                                         | playing or not                                                                             |
+| Remote keys | Home, Back, arrows, OK, Options (\*), Play/Pause, Rewind, Fast forward, Instant replay | same, plus Volume up, Volume down, Mute, Channel up/down (with a tuner)                    |
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+States are refreshed every 10 seconds. The list of apps is read again every
+15 minutes, and as soon as an app the list did not have comes to the screen.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+### What a Roku cannot do (and so Gladys neither)
 
-## Actions
-
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
-
-## Scenes
-
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
-
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **No volume level.** Roku's protocol only has the Volume up, Volume down and
+  Mute keys: there is no "set the volume to 20", no way to read the current
+  level, nor to know whether the sound is muted. Gladys offers the keys, and
+  tells nothing it cannot know.
+- **Roku players cannot be turned off.** A Roku Express, Stick or Ultra has no
+  real power state: Gladys shows whether it is active or in standby, but only
+  a Roku TV can be turned on and off.
+- **Turning on a TV in deep standby** needs **Fast TV start** (see above).
+  When the TV does not answer, Gladys sends it a Wake-on-LAN packet first:
+  whether the TV wakes up depends on the model, and works more often over
+  Ethernet than over Wi-Fi.
+- **Volume and power keys of a player** (Roku Voice Remote buttons that drive
+  your TV through HDMI-CEC or infrared) are not reachable over the network.
+- **Typing text** (search fields) is not supported yet.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+Three widgets come with the integration (Gladys 5.1 or later). Each one shows
+the Roku picked in its settings, or the first one.
+
+- **Roku remote** — power and app on screen, then **Power** (Roku TV) or
+  **OK** (player), **Home**, **Back**, and **Keys…**, which opens the list of
+  every key of the device with a number of presses (e.g. Volume down × 5).
+- **Roku playback** — the icon and name of the app on screen, playing or
+  paused, the position in the video, and Play/Pause, Rewind, Fast forward,
+  Instant replay.
+- **Roku apps** — up to four app shortcuts, with their icons. Type the names
+  in the widget settings (e.g. Netflix, YouTube, Disney Plus: case and accents
+  do not matter); leave them empty for the first apps installed. The app on
+  screen is marked.
+
+The features of the device can also be added to any regular dashboard box.
+
+## Scenes
+
+The integration adds its own cards to the scene editor, under the
+**Integrations** category:
+
+- **Roku app changed** (trigger) — starts the scene when an app comes to the
+  screen, within about 10 seconds. Optionally pick the Roku and type the app
+  name **exactly as the Roku shows it** (e.g. `Netflix`, or `Home` for the
+  home screen). The next actions can use the app name and its Roku id.
+  Example: _when Netflix starts on the living room TV, dim the lights_.
+- **Open an app on a Roku** (action) — opens an installed app by its name.
+  Example: _movie night: turn the TV on, open Netflix_.
+- **Press a Roku remote key** (action) — any key, as many times as needed,
+  including Turn on and Turn off for a Roku TV. Example: _when the doorbell
+  rings, press Play/Pause_.
+
+The power and playback states are regular device features: a scene can start
+when the TV turns off, or check that something is playing.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+**"… refuses remote control"** (in the Configuration tab, a widget or an
+action): the Roku is set to Limited or Disabled. Set **Control by mobile apps
+
+> Network access** to **Enabled** (see
+> [Before you start](#before-you-start-allow-control-from-your-network)), then
+> run **Test the connection to a Roku**.
+
+**The scan finds nothing.** Gladys and the Roku must be on the same network
+(same subnet, no guest Wi-Fi, no client isolation). Type the address of the
+Roku in **Roku addresses**, save, and scan again.
+
+**The Roku shows as off while it is on.** It does not answer anymore: check its
+address (it may have changed), then run **Test the connection to a Roku**.
+
+**A Roku TV does not turn on.** Turn on **Fast TV start** on the TV. If it is
+connected by Wi-Fi, Wake-on-LAN may not reach it while asleep.
+
+**An app is missing from the list.** The list is read every 15 minutes: wait,
+or open the app once on the Roku.
+
+## Reporting a problem
+
+1. In the **Configuration** tab, turn on **Debug logs** and save.
+2. Reproduce the problem, then copy the logs of the integration (Integration
+   page > Logs).
+3. Open an issue on
+   [github.com/guim31/gladys-roku](https://github.com/guim31/gladys-roku/issues)
+   with the logs, your Roku model and its Roku OS version (Settings > System >
+   About). The logs hold no password; they show the Roku model, its address on
+   your network and its serial number.
+
+Turn the debug logs off afterwards: they are verbose.
+
+---
+
+Not affiliated with Roku, Inc. Roku is a trademark of Roku, Inc.

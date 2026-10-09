@@ -1,42 +1,60 @@
 // -----------------------------------------------------------------------------
 // Integration configuration.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Filled in by the user in Gladys, from the `config_schema` of
+// `gladys-assistant-integration.json`. This module provides the defaults and
+// normalizes the received object, so the rest of the code never deals with
+// `undefined` or with a raw string.
 // -----------------------------------------------------------------------------
 
+import { isValidHost } from './ecp/client.js';
+
 // Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+// `config_schema` of the manifest (test/manifest.test.js checks it).
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  poll_frequency: 300, // seconds, how often sensors are refreshed
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  // Addresses typed by hand, for a Roku the network discovery does not find.
+  hosts: '',
+  // Writes every ECP request and answer summary in the logs.
+  debug_logs: false,
 };
 
 /**
+ * Split the "Roku addresses" field: commas, semicolons or spaces separate the
+ * entries, duplicates and invalid entries are dropped.
+ *
+ * @param {unknown} raw The field value.
+ * @returns {{ hosts: string[], invalid: string[] }} Valid addresses, and the rest.
+ */
+export function parseHosts(raw) {
+  const entries = String(raw ?? '')
+    .split(/[\s,;]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const hosts = [];
+  const invalid = [];
+  for (const entry of entries) {
+    // Accept a pasted "http://192.168.1.40:8060/" too.
+    const host = entry.replace(/^https?:\/\//i, '').replace(/(:\d+)?\/?$/, '');
+    if (!isValidHost(host)) {
+      invalid.push(entry);
+    } else if (!hosts.includes(host)) {
+      hosts.push(host);
+    }
+  }
+  return { hosts, invalid };
+}
+
+/**
  * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ *
+ * @param {Record<string, unknown>} raw Config returned by the SDK.
+ * @returns {{ hosts: string[], invalidHosts: string[], debug_logs: boolean }} The config.
  */
 export function normalizeConfig(raw = {}) {
+  const { hosts, invalid } = parseHosts(raw?.hosts ?? DEFAULT_CONFIG.hosts);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    hosts,
+    invalidHosts: invalid,
+    debug_logs: raw?.debug_logs === true || raw?.debug_logs === 'true',
   };
 }

@@ -12,28 +12,22 @@ the notes of the version's GitHub Release.
 
 ### Added
 
-- A working example of scene triggers, scene actions and dashboard widgets
-  (Gladys 5.1.0 or later).
-- `CHANGELOG.md`, rolled by the Release workflow.
-- A GitHub Release for every version, with its changelog section as notes: the
-  Gladys Supervision page links each version to the repository's releases.
-- CI runs the tests on Node 22 and 24, and builds the Docker image.
-- Dependabot keeps the npm dependencies and the GitHub Actions up to date.
-- `SECURITY.md` (how to report a vulnerability) and `CLAUDE.md` (project rules
-  for contributors and coding assistants).
-- Manifest tests: `version` matches `package.json`, `docker_image` is tagged
-  with it, descriptions hold 10 to 100 characters, placeholders are
-  multi-language objects.
-- The latitude and longitude fields show an example value as placeholder.
+- Roku players and Roku TVs as Gladys devices, controlled locally over the Roku
+  External Control Protocol (ECP): power (on/off on Roku TVs, state on
+  players), the app on screen with a list to open another one, the input of a
+  Roku TV, the playback state, and the remote keys (navigation, playback, and
+  on Roku TVs volume, mute and channels).
+- Discovery of the Rokus of the network through the Gladys core (SSDP), and
+  addresses typed by hand for the ones it misses. A Roku that changed address
+  is found again.
+- Wake-on-LAN before turning on a Roku TV that does not answer.
+- Dashboard widgets: Roku remote, Roku playback (with the app icon) and Roku
+  apps (shortcuts with their icons).
+- Scenes: the "Roku app changed" trigger, the "Open an app on a Roku" and
+  "Press a Roku remote key" actions.
+- A clear message, in the Configuration screen, the widgets and the "Test the
+  connection to a Roku" action, when a Roku refuses control ("Control by
+  mobile apps" set to Limited or Disabled), with the setting to change.
+- Optional debug logs of every request sent to the Rokus.
 
-### Changed
-
-- Node.js 22 or later is required (Node 20 is end-of-life).
-
-### Fixed
-
-- The release commit no longer fails `npm run format:check`: the Release
-  workflow updates the manifest `version` and `docker_image` in place instead
-  of re-printing the whole file with `jq`.
-
-[Unreleased]: https://github.com/GladysAssistant/integration-template-js/commits/main
+[Unreleased]: https://github.com/guim31/gladys-roku/commits/main

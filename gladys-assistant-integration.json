@@ -1,177 +1,341 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Roku",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Control your Roku players and Roku TVs locally: power, apps, playback, remote keys, inputs.",
+    "fr": "Pilotez vos lecteurs Roku et Roku TV en local : marche, applications, lecture, touches, entrées."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-roku:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-roku/main/cover.png",
+  "categories": ["multimedia"],
+  "transports": ["local"],
+  "network_discovery": [{ "type": "ssdp", "st": "roku:ecp" }],
+  "network_wake": true,
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": { "en": "Before you start", "fr": "Avant de commencer" },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "On each Roku, open Settings > System > Advanced system settings > Control by mobile apps > Network access and choose \"Enabled\": recent Roku OS versions set it to \"Limited\", which blocks Gladys. Then run a device scan (Discovery tab): Rokus on the same network are found automatically. Type an address below only for a Roku the scan misses.",
+        "fr": "Sur chaque Roku, ouvrez Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès réseau (Settings > System > Advanced system settings > Control by mobile apps > Network access) et choisissez « Activé » (Enabled) : les versions récentes de Roku OS le règlent sur « Limité » (Limited), ce qui bloque Gladys. Lancez ensuite une recherche d'appareils (onglet Découverte) : les Roku du même réseau sont trouvés automatiquement. Ne saisissez une adresse ci-dessous que pour un Roku que la recherche ne trouve pas."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://developer.roku.com/docs/developer-program/dev-tools/external-control-api.md",
+          "label": {
+            "en": "Roku External Control Protocol (ECP)",
+            "fr": "Protocole de contrôle externe de Roku (ECP)"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
+      "key": "hosts",
+      "type": "string",
+      "label": { "en": "Roku addresses (optional)", "fr": "Adresses des Roku (facultatif)" },
       "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+        "en": "IP addresses of Rokus the device scan does not find, separated by commas. Give them a fixed address in your router (DHCP reservation).",
+        "fr": "Adresses IP des Roku que la recherche d'appareils ne trouve pas, séparées par des virgules. Donnez-leur une adresse fixe dans votre box (réservation DHCP)."
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds.",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes."
+      "placeholder": {
+        "en": "e.g. 192.168.1.40, 192.168.1.41",
+        "fr": "ex. 192.168.1.40, 192.168.1.41"
       },
       "required": false,
-      "default": 300,
-      "min": 30,
-      "max": 3600
+      "default": ""
+    },
+    {
+      "key": "debug_logs",
+      "type": "boolean",
+      "label": { "en": "Debug logs", "fr": "Journaux de débogage" },
+      "description": {
+        "en": "Write every request sent to the Rokus and a summary of their answers in the integration logs. Turn it on before reporting a problem.",
+        "fr": "Écrire chaque requête envoyée aux Roku et un résumé de leurs réponses dans les journaux de l'intégration. À activer avant de signaler un problème."
+      },
+      "required": false,
+      "default": false
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "test_connection",
+      "label": { "en": "Test the connection to a Roku", "fr": "Tester la connexion à un Roku" },
+      "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "label": { "en": "Roku (optional)", "fr": "Roku (facultatif)" },
+          "description": {
+            "en": "Leave both fields empty to test every known Roku.",
+            "fr": "Laissez les deux champs vides pour tester tous les Roku connus."
+          },
+          "required": false
+        },
+        {
+          "key": "ip",
+          "type": "string",
+          "label": { "en": "Or an IP address", "fr": "Ou une adresse IP" },
+          "description": {
+            "en": "For a Roku not added yet. If it answers, it appears in the Discovery tab.",
+            "fr": "Pour un Roku pas encore ajouté. S'il répond, il apparaît dans l'onglet Découverte."
+          },
+          "placeholder": { "en": "e.g. 192.168.1.40", "fr": "ex. 192.168.1.40" },
+          "required": false
         }
       ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "app_changed",
+      "label": { "en": "Roku app changed", "fr": "Application Roku changée" },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "An app (or the home screen) came to the foreground on a Roku. Detected within about 10 seconds.",
+        "fr": "Une application (ou l'écran d'accueil) est passée au premier plan sur un Roku. Détecté en 10 secondes environ."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": { "en": "Roku", "fr": "Roku" }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "key": "app",
+          "type": "string",
+          "label": {
+            "en": "App name, exactly as shown by the Roku",
+            "fr": "Nom de l'application, exactement comme l'affiche le Roku"
+          },
+          "description": {
+            "en": "e.g. Netflix, or Home for the home screen. Leave empty for any app.",
+            "fr": "ex. Netflix, ou Home pour l'écran d'accueil. Laissez vide pour n'importe quelle application."
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "app",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": { "en": "App name", "fr": "Nom de l'application" }
+        },
+        {
+          "key": "app_id",
+          "type": "string",
+          "label": { "en": "Roku app id", "fr": "Identifiant Roku de l'application" }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "launch_app",
+      "label": { "en": "Open an app on a Roku", "fr": "Ouvrir une application sur un Roku" },
       "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+        "en": "Bring an installed app to the foreground, by its name (Home: the home screen).",
+        "fr": "Met au premier plan une application installée, par son nom (Home : l'écran d'accueil)."
       },
-      "timeout_seconds": 15,
+      "timeout_seconds": 20,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": { "en": "Roku", "fr": "Roku" },
+          "required": true
+        },
+        {
+          "key": "app",
+          "type": "string",
+          "label": { "en": "App name", "fr": "Nom de l'application" },
+          "description": {
+            "en": "As shown by the Roku, e.g. Netflix, YouTube, Disney Plus (case and accents do not matter).",
+            "fr": "Tel qu'affiché par le Roku, ex. Netflix, YouTube, Disney Plus (majuscules et accents indifférents)."
+          },
+          "placeholder": { "en": "e.g. Netflix", "fr": "ex. Netflix" },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "app_id",
+          "type": "string",
+          "label": { "en": "Roku app id", "fr": "Identifiant Roku de l'application" }
+        },
+        {
+          "key": "app_name",
+          "type": "string",
+          "label": { "en": "App name", "fr": "Nom de l'application" }
+        }
+      ]
+    },
+    {
+      "key": "send_key",
+      "label": {
+        "en": "Press a Roku remote key",
+        "fr": "Appuyer sur une touche de télécommande Roku"
+      },
+      "description": {
+        "en": "Send a remote key to a Roku, once or several times. Volume, mute, channel and power keys work on Roku TVs only.",
+        "fr": "Envoie une touche de télécommande à un Roku, une ou plusieurs fois. Volume, sourdine, chaînes et marche/arrêt : Roku TV seulement."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Roku", "fr": "Roku" },
+          "required": true
+        },
+        {
+          "key": "key",
+          "type": "select",
+          "label": { "en": "Key", "fr": "Touche" },
+          "required": true,
+          "options": [
+            { "value": "home", "label": { "en": "Home", "fr": "Accueil" } },
+            { "value": "back", "label": { "en": "Back", "fr": "Retour" } },
+            { "value": "up", "label": { "en": "Up", "fr": "Haut" } },
+            { "value": "down", "label": { "en": "Down", "fr": "Bas" } },
+            { "value": "left", "label": { "en": "Left", "fr": "Gauche" } },
+            { "value": "right", "label": { "en": "Right", "fr": "Droite" } },
+            { "value": "select", "label": { "en": "OK", "fr": "OK" } },
+            { "value": "info", "label": { "en": "Options (*)", "fr": "Options (*)" } },
+            { "value": "play", "label": { "en": "Play/Pause", "fr": "Lecture/Pause" } },
+            { "value": "rewind", "label": { "en": "Rewind", "fr": "Retour rapide" } },
+            { "value": "forward", "label": { "en": "Fast forward", "fr": "Avance rapide" } },
+            {
+              "value": "replay",
+              "label": { "en": "Instant replay", "fr": "Relecture instantanée" }
+            },
+            { "value": "volume_up", "label": { "en": "Volume up", "fr": "Volume +" } },
+            { "value": "volume_down", "label": { "en": "Volume down", "fr": "Volume −" } },
+            { "value": "volume_mute", "label": { "en": "Mute", "fr": "Sourdine" } },
+            { "value": "channel_up", "label": { "en": "Channel up", "fr": "Chaîne suivante" } },
+            {
+              "value": "channel_down",
+              "label": { "en": "Channel down", "fr": "Chaîne précédente" }
+            },
+            { "value": "power_on", "label": { "en": "Turn on", "fr": "Allumer" } },
+            { "value": "power_off", "label": { "en": "Turn off", "fr": "Éteindre" } }
+          ]
+        },
+        {
+          "key": "times",
+          "type": "number",
+          "label": { "en": "Number of presses", "fr": "Nombre d'appuis" },
+          "required": false,
+          "default": 1,
+          "min": 1,
+          "max": 20
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
+      "key": "remote",
+      "label": { "en": "Roku remote", "fr": "Télécommande Roku" },
       "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+        "en": "Power and foreground app of a Roku, with Power (Roku TV) or OK, Home, Back and every other key.",
+        "fr": "Alimentation et application d'un Roku, avec Marche ou OK, Accueil, Retour et toutes les touches."
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "icon": "tv",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Roku", "fr": "Roku" },
+          "description": {
+            "en": "Leave empty to show the first Roku.",
+            "fr": "Laissez vide pour afficher le premier Roku."
+          },
+          "required": false
+        }
+      ],
+      "action_timeout_seconds": 20
+    },
+    {
+      "key": "media",
+      "label": { "en": "Roku playback", "fr": "Lecture Roku" },
+      "description": {
+        "en": "The app playing on a Roku with its icon, the playback state and position, and the playback keys.",
+        "fr": "L'application en cours sur un Roku avec son icône, l'état et la position de lecture, et les touches."
+      },
+      "icon": "play-circle",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Roku", "fr": "Roku" },
+          "description": {
+            "en": "Leave empty to show the first Roku.",
+            "fr": "Laissez vide pour afficher le premier Roku."
+          },
+          "required": false
+        }
+      ],
+      "action_timeout_seconds": 20
+    },
+    {
+      "key": "apps",
+      "label": { "en": "Roku apps", "fr": "Applications Roku" },
+      "description": {
+        "en": "Up to four app shortcuts on a Roku, with their icons, the foreground one marked.",
+        "fr": "Jusqu'à quatre raccourcis d'applications sur un Roku, avec leurs icônes, celle en cours marquée."
+      },
+      "icon": "grid",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Roku", "fr": "Roku" },
+          "description": {
+            "en": "Leave empty to show the first Roku.",
+            "fr": "Laissez vide pour afficher le premier Roku."
+          },
+          "required": false
+        },
+        {
+          "key": "app_1",
+          "type": "string",
+          "label": { "en": "App 1", "fr": "Application 1" },
+          "description": {
+            "en": "Name of an installed app, e.g. Netflix (case and accents do not matter). Leave the four fields empty for the first installed apps.",
+            "fr": "Nom d'une application installée, ex. Netflix (majuscules et accents indifférents). Laissez les quatre champs vides pour les premières applications installées."
+          },
+          "required": false
+        },
+        {
+          "key": "app_2",
+          "type": "string",
+          "label": { "en": "App 2", "fr": "Application 2" },
+          "required": false
+        },
+        {
+          "key": "app_3",
+          "type": "string",
+          "label": { "en": "App 3", "fr": "Application 3" },
+          "required": false
+        },
+        {
+          "key": "app_4",
+          "type": "string",
+          "label": { "en": "App 4", "fr": "Application 4" },
+          "required": false
+        }
+      ],
+      "action_timeout_seconds": 20
     }
   ]
 }
