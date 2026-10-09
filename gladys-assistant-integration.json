@@ -6,8 +6,8 @@
     "en": "Control your Roku players and Roku TVs locally: power, apps, playback, remote keys, inputs.",
     "fr": "Pilotez vos lecteurs Roku et Roku TV en local : marche, applications, lecture, touches, entrées."
   },
-  "version": "1.0.1",
-  "docker_image": "ghcr.io/guim31/gladys-roku:1.0.1",
+  "version": "1.0.2",
+  "docker_image": "ghcr.io/guim31/gladys-roku:1.0.2",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-roku/main/cover.png",
   "categories": ["multimedia"],
