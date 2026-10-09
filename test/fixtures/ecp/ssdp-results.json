@@ -1,0 +1,23 @@
+[
+  {
+    "source_ip": "192.0.2.10",
+    "source_mac": "02:00:00:00:0b:02",
+    "source_port": 1900,
+    "headers": "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nST: roku:ecp\r\nLocation: http://192.0.2.10:8060/\r\nUSN: uuid:roku:ecp:BOX000000001\r\n\r\n"
+  },
+  {
+    "source_ip": "192.0.2.30",
+    "source_port": 1900,
+    "headers": "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nST: roku:ecp\r\nLOCATION: http://192.0.2.30:8060/\r\nUSN: uuid:roku:ecp:TVX000000003\r\nEXT:\r\nServer: Roku/11.5.0 UPnP/1.0 Roku/11.5.0\r\n\r\n"
+  },
+  {
+    "source_ip": "192.0.2.30",
+    "source_port": 1900,
+    "headers": "HTTP/1.1 200 OK\r\nCache-Control: max-age=3600\r\nST: roku:ecp\r\nLOCATION: http://192.0.2.30:8060/\r\nUSN: uuid:roku:ecp:TVX000000003\r\n\r\n"
+  },
+  {
+    "source_ip": "192.0.2.99",
+    "source_port": 1900,
+    "headers": "HTTP/1.1 200 OK\r\nST: urn:dial-multiscreen-org:service:dial:1\r\nLOCATION: http://192.0.2.99:56789/dd.xml\r\nUSN: uuid:00000000-0000-0000-0000-000000000099::urn:dial-multiscreen-org:service:dial:1\r\n\r\n"
+  }
+]

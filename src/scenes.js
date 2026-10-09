@@ -1,41 +1,97 @@
 // -----------------------------------------------------------------------------
-// Scene actions (SDK v0.14+, Gladys 5.1+).
+// Scene triggers and actions (Gladys 5.1+).
 //
-// A scene action is an OPERATION a scene author places in a scene, with
-// parameters and a result: "identify this device", "take a snapshot", "clean
-// these rooms". Each one is declared in the manifest `scene_actions` field
-// (key, label, `fields` in the config_schema grammar, scalar `outputs`) and
-// handled here, keyed by that same `key`; index.js registers every entry with
-// `gladys.onSceneAction(key, ...)`.
+// Trigger (fired by index.js from the manager's `appChanged` event):
+//   - app_changed: the foreground app of a Roku changed (polled every 10 s),
+//     filterable by Roku and by app name — "when Netflix starts, dim the
+//     lights". The power and playback states are device features: a scene
+//     uses them directly.
 //
-// Scene TRIGGERS are the other direction ("this happened"): they are fired by
-// the device that observes the event, see src/devices/motionSensor.js.
-//
-// The rules that matter:
-//   - `fields` arrive RESOLVED: scene variables substituted, defaults applied,
-//     validated by the core; a `"source": "devices"` field is the chosen
-//     device external_id;
-//   - resolve an object of the declared `outputs` (scalars only), readable by
-//     the following actions of the scene, or `undefined` for none. Keys not
-//     declared in the manifest are dropped by the core;
-//   - throwing fails THIS action only: the scene logs it and continues. A
-//     scene action is never a condition: return an output and let the scene
-//     author gate on it;
-//   - never fire a scene event as a consequence of a received action: a scene
-//     bound to that event would loop through the integration.
+// Actions:
+//   - launch_app: open an app by name (or id) — "movie night";
+//   - send_key: press a remote key, a number of times — "mute the TV".
+// Keys are forever once published.
 // -----------------------------------------------------------------------------
 
-import { createLogger } from '@gladysassistant/integration-sdk';
-import { signalDevice } from './devices/index.js';
+import { REMOTE_KEYS } from './devices/roku.js';
+import { HOME_APP_ID } from './ecp/parse.js';
 
-const logger = createLogger({ name: 'scenes' });
+export const SCENE_TRIGGER = { APP_CHANGED: 'app_changed' };
 
-export const SCENE_ACTIONS = {
-  // The ack is awaited under the action's `timeout_seconds` (15 s in the
-  // manifest), counted from the moment the scene reaches the action.
-  async identify_device(gladys, { fields, config }) {
-    logger.info(`Scene action identify_device <- ${fields.device}`);
-    const signalled = await signalDevice(gladys, fields.device, config);
-    return { signalled };
-  },
-};
+/** Scene trigger keys fired by the code (declared in the manifest). */
+export const SCENE_TRIGGER_KEYS = Object.values(SCENE_TRIGGER);
+
+/** Key values of the send_key action (manifest options): remote keys + power. */
+export const SCENE_KEY_VALUES = [...REMOTE_KEYS.map((entry) => entry.key), 'power_on', 'power_off'];
+
+const MAX_TIMES = 20;
+
+function requireRoku(manager, externalId) {
+  const roku = manager.findByExternalId(externalId);
+  if (!roku?.ip) {
+    throw new Error(`Unknown Roku device: ${externalId}`);
+  }
+  return roku;
+}
+
+/**
+ * The data of an `app_changed` event.
+ *
+ * @param {string} deviceExternalId Device external id.
+ * @param {Object} app The new foreground app ({ id, name, home }).
+ * @returns {{ device: string, app: string, app_id: string }} Flat event data.
+ */
+export function appChangedEvent(deviceExternalId, app) {
+  return {
+    device: deviceExternalId,
+    app: app.home ? 'Home' : app.name,
+    app_id: app.id,
+  };
+}
+
+/**
+ * The scene action handlers, bound to a RokuManager.
+ *
+ * @param {Object} manager RokuManager.
+ * @returns {Object} Handlers by key.
+ */
+export function createSceneActions(manager) {
+  return {
+    async launch_app(fields) {
+      const roku = requireRoku(manager, fields.device);
+      const wanted = String(fields.app ?? '').trim();
+      let app = manager.findApp(roku, wanted);
+      if (!app && roku.apps !== null) {
+        // Installed since the last read?
+        await manager.refreshApps(roku).catch(() => false);
+        app = manager.findApp(roku, wanted);
+      }
+      if (!app) {
+        const installed = (roku.apps ?? []).map((candidate) => candidate.name).join(', ');
+        throw new Error(
+          `"${wanted}" is not installed on ${roku.info?.name ?? roku.ip}. Installed: ${installed || 'unknown'}`,
+        );
+      }
+      await manager.launch(roku.serial, app.id);
+      return { app_id: app.id, app_name: app.id === HOME_APP_ID ? 'Home' : app.name };
+    },
+
+    async send_key(fields) {
+      const roku = requireRoku(manager, fields.device);
+      const times = Math.min(Math.max(Math.trunc(Number(fields.times) || 1), 1), MAX_TIMES);
+      if (fields.key === 'power_on' || fields.key === 'power_off') {
+        await manager.setPower(roku.serial, fields.key === 'power_on');
+        return undefined;
+      }
+      const remoteKey = REMOTE_KEYS.find((entry) => entry.key === fields.key);
+      if (!remoteKey) {
+        throw new Error(`Unknown key: ${fields.key}`);
+      }
+      await manager.pressKey(roku.serial, remoteKey.ecp, times);
+      return undefined;
+    },
+  };
+}
+
+/** Scene action keys (forever), for the manifest consistency test. */
+export const SCENE_ACTION_KEYS = ['launch_app', 'send_key'];

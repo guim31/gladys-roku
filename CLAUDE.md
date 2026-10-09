@@ -31,16 +31,23 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          creates the SDK client, registers the handlers (src/app.js), connects
+src/app.js                        every SDK handler, wired to the manager (tested in test/app.test.js)
+src/manager.js                    the Rokus: discovery (SSDP + typed addresses), polling, state dedup, commands
+src/ecp/client.js                 ECP over HTTP (port 8060), errors with a `kind` (forbidden, refused…)
+src/ecp/parse.js, src/ecp/xml.js  readers of the ECP answers and SSDP replies, minimal XML parser
+src/devices/roku.js               the Gladys device of a Roku: features, remote keys, states
+src/widgets.js                    dashboard widgets (remote, media, apps) and app icons
+src/scenes.js                     scene trigger data and scene action handlers
+src/actions.js                    manifest action handlers (test_connection)
+src/messages.js                   bilingual explanations of the errors
+src/nudger.js                     widget refresh nudges at the core's pace (1 / 10 s / widget)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
 docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test; test/helpers/fakeGladys.js stands in for the SDK
+test/                             node --test; helpers/fakeGladys.js (SDK), helpers/fakeRoku.js (LAN)
+test/fixtures/ecp/                real ECP answers adapted from python-rokuecp (MIT), anonymized
+test/gladys-rules.test.js         conformance of every discovered device to the core rules
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -175,3 +182,43 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   `https://integration-store-storage.gladysassistant.com/index.json`.
 - La règle `data/` du `.gitignore` du template (pour le volume `/data`) exclut aussi `src/data/` :
   l'ancrer en `/data/`, dans `.prettierignore` aussi.
+
+## Pièges rencontrés sur l'intégration Roku
+
+- **Le SDK publié (0.14.0) est en retard sur le README de `master`** : ni
+  `publishChangedStates`, ni `@gladysassistant/integration-sdk/testing`. Le
+  dédoublonnage des états est fait dans `src/manager.js`, le faux SDK dans
+  `test/helpers/fakeGladys.js`. Vérifier dans `node_modules` avant d'utiliser
+  une méthode documentée sur `master`.
+- **Rendu des fonctionnalités `television`** : le front dessine en bouton
+  poussoir tous les types `television` sauf `binary`, `volume` et `channel`
+  (`TelevisionPushButtonFeatureTypes`). `music/playback_state` est un contrôle
+  continu, pas un bouton : le publier en `read_only`.
+- **`text/select`** : valeurs d'options en chaînes, `label` en **chaîne simple**
+  (pas d'objet multilingue), pas de doublon (`"5"` et `5` comptent double). Le
+  cœur resynchronise en silence les `supported_options` et les `params` d'un
+  appareil déjà créé à chaque `publishDiscoveredDevices` : republier quand la
+  liste change (applications installées), rien d'autre à faire.
+- **`publishDiscoveredDevices` remplace toute la liste** : toujours republier
+  tous les appareils connus, jamais un seul.
+- **Découverte SSDP médiée** : `network_discovery: [{ "type": "ssdp", "st": … }]`,
+  le cœur ne cherche que la **première** entrée `ssdp`. `source_mac` est
+  facultatif (table ARP du cœur). Un cœur trop ancien répond 403 : garder la
+  saisie d'adresse en secours.
+- **Le validateur du store limite aussi la `description` des widgets à 100
+  caractères** par langue (et le `label` à 3-30) : `test/manifest.test.js` le
+  vérifie.
+- **Formulaire derrière un bouton de widget** (`action.fields`) : un cœur qui ne
+  les connaît pas relaie l'appui **sans** `values` ; le refuser avec un message.
+- Dans les tests, `AbortSignal.timeout()` ne retient pas la boucle
+  d'événements : un faux `fetch` qui attend l'abandon doit garder un minuteur
+  actif, sinon `node --test` annule le test.
+- **Roku** : « Control by mobile apps » sur _Limited_ (défaut récent) donne des
+  HTTP 403 ; seul _Enabled_ (ou _Permissive_) laisse passer les touches. Les
+  réponses refusées ne disent rien de l'état : ne rien publier plutôt que
+  deviner.
+- **CI « Docker build » en `429 Too Many Requests`** : Docker Hub limite les
+  pulls anonymes, et les runners GitHub partagent leurs IP. Le `Dockerfile` tire
+  donc l'image de base depuis le miroir officiel ECR Public
+  (`public.ecr.aws/docker/library/node:24-alpine`, même empreinte). Un 429 dans
+  un run déjà passé ne se « corrige » pas : le prochain push relance la CI.

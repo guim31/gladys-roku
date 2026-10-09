@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Adapted from python-rokuecp (MIT, (c) Chris Talkington), anonymized: serial numbers, ids and MAC addresses are fake. -->
+<device-info>
+    <udn>00000000-0000-1000-8000-000000000000</udn>
+    <serial-number>BOX000000001</serial-number>
+    <device-id>BOX000000001</device-id>
+    <vendor-name>Roku</vendor-name>
+    <model-number>4200X</model-number>
+    <model-name>Roku 3</model-name>
+    <model-region>US</model-region>
+    <supports-ethernet>true</supports-ethernet>
+    <wifi-mac>02:00:00:00:0b:01</wifi-mac>
+    <ethernet-mac>02:00:00:00:0b:02</ethernet-mac>
+    <network-type>ethernet</network-type>
+    <user-device-name>My Roku 3</user-device-name>
+    <software-version>7.5.0</software-version>
+    <software-build>09021</software-build>
+    <secure-device>true</secure-device>
+    <language>en</language>
+    <country>US</country>
+    <locale>en_US</locale>
+    <time-zone>US/Pacific</time-zone>
+    <time-zone-offset>-480</time-zone-offset>
+    <power-mode>PowerOn</power-mode>
+    <supports-suspend>false</supports-suspend>
+    <supports-find-remote>false</supports-find-remote>
+    <supports-audio-guide>false</supports-audio-guide>
+    <developer-enabled>true</developer-enabled>
+    <keyed-developer-id/>
+    <search-enabled>true</search-enabled>
+    <voice-search-enabled>true</voice-search-enabled>
+    <notifications-enabled>true</notifications-enabled>
+    <notifications-first-use>false</notifications-first-use>
+    <supports-private-listening>false</supports-private-listening>
+    <headphones-connected>false</headphones-connected>
+</device-info>

@@ -1,33 +1,71 @@
+// Configuration normalization, messages and widget nudges.
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { DEFAULT_CONFIG, normalizeConfig, parseHosts } from '../src/config.js';
+import { explainError, explainErrorShort } from '../src/messages.js';
+import { NUDGE_INTERVAL_MS, createWidgetNudger } from '../src/nudger.js';
+import { RokuError } from '../src/ecp/client.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('addresses: separators, duplicates, pasted URLs, invalid entries', () => {
+  assert.deepEqual(parseHosts('192.168.1.40, 192.168.1.41;192.168.1.40  roku.local'), {
+    hosts: ['192.168.1.40', '192.168.1.41', 'roku.local'],
+    invalid: [],
+  });
+  assert.deepEqual(parseHosts('http://192.168.1.40:8060/ 999.1.1.1 a/b'), {
+    hosts: ['192.168.1.40'],
+    invalid: ['999.1.1.1', 'a/b'],
+  });
+  assert.deepEqual(parseHosts(undefined), { hosts: [], invalid: [] });
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('normalized config', () => {
+  assert.deepEqual(normalizeConfig(), { hosts: [], invalidHosts: [], debug_logs: false });
+  assert.deepEqual(normalizeConfig({ hosts: '192.0.2.1', debug_logs: true }), {
+    hosts: ['192.0.2.1'],
+    invalidHosts: [],
+    debug_logs: true,
+  });
+  assert.equal(normalizeConfig({ debug_logs: 'true' }).debug_logs, true);
+  assert.deepEqual(Object.keys(DEFAULT_CONFIG).sort(), ['debug_logs', 'hosts']);
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
+test('every error kind has a bilingual explanation', () => {
+  for (const kind of ['forbidden', 'refused', 'timeout', 'unreachable', 'http', 'malformed']) {
+    const err = new RokuError('boom', { kind, ip: '192.0.2.1' });
+    const full = explainError(err, 'Living room TV');
+    assert.ok(full.en && full.fr, kind);
+    const short = explainErrorShort(err);
+    assert.ok(short.en.length <= 200 && short.fr.length <= 200, `${kind}: toast too long`);
+  }
+  assert.deepEqual(explainError(new Error('plain')), { en: 'plain', fr: 'plain' });
 });
 
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-});
-
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('widget nudges: at most one per widget every 10 s, the last one never lost', () => {
+  const sent = [];
+  const timers = [];
+  let clock = 0;
+  const nudger = createWidgetNudger(
+    { requestWidgetRefresh: (key) => sent.push(key) },
+    ['remote', 'media'],
+    {
+      now: () => clock,
+      schedule: (fn, ms) => {
+        timers.push({ fn, ms });
+        return timers.length;
+      },
+    },
+  );
+  nudger.nudgeAll();
+  assert.deepEqual(sent, ['remote', 'media']);
+  clock += 3000;
+  nudger.nudge('remote');
+  nudger.nudge('remote');
+  assert.deepEqual(sent, ['remote', 'media'], 'throttled');
+  assert.equal(timers.length, 1, 'one trailing nudge');
+  assert.equal(timers[0].ms, NUDGE_INTERVAL_MS - 3000);
+  clock += 7000;
+  timers[0].fn();
+  assert.deepEqual(sent, ['remote', 'media', 'remote']);
+  nudger.stop();
 });
