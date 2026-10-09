@@ -217,3 +217,8 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   HTTP 403 ; seul _Enabled_ (ou _Permissive_) laisse passer les touches. Les
   réponses refusées ne disent rien de l'état : ne rien publier plutôt que
   deviner.
+- **CI « Docker build » en `429 Too Many Requests`** : Docker Hub limite les
+  pulls anonymes, et les runners GitHub partagent leurs IP. Le `Dockerfile` tire
+  donc l'image de base depuis le miroir officiel ECR Public
+  (`public.ecr.aws/docker/library/node:24-alpine`, même empreinte). Un 429 dans
+  un run déjà passé ne se « corrige » pas : le prochain push relance la CI.
