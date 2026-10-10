@@ -8,7 +8,8 @@
 // addresses typed in the configuration.
 //
 // The manager never talks to the dashboard or the scene engine itself: it
-// emits `changed` (serial) after a refresh that changed something, and
+// emits `refreshed` (roku) after every read, `changed` (roku) after a read
+// that changed something, and
 // `appChanged` (serial, previous, current) when the foreground app changed —
 // index.js turns them into widget refreshes and scene events.
 // -----------------------------------------------------------------------------
@@ -475,6 +476,8 @@ export class RokuManager extends EventEmitter {
     ) {
       this.emit('changed', roku);
     }
+    // After every read, changed or not: the widgets compare what they show.
+    this.emit('refreshed', roku);
     return roku;
   }
 

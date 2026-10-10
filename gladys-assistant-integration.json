@@ -244,8 +244,8 @@
       "key": "remote",
       "label": { "en": "Roku remote", "fr": "Télécommande Roku" },
       "description": {
-        "en": "Power and foreground app of a Roku, with Power (Roku TV) or OK, Home, Back and every other key.",
-        "fr": "Alimentation et application d'un Roku, avec Marche ou OK, Accueil, Retour et toutes les touches."
+        "en": "Power and foreground app of a Roku, with Power (Roku TV) or Play/Pause, Home, Back and OK.",
+        "fr": "Alimentation et application d'un Roku, avec Marche (Roku TV) ou Lecture, Accueil, Retour, OK."
       },
       "icon": "tv",
       "settings": [
@@ -311,8 +311,8 @@
           "type": "string",
           "label": { "en": "App 1", "fr": "Application 1" },
           "description": {
-            "en": "Name of an installed app, e.g. Netflix (case and accents do not matter). Leave the four fields empty for the first installed apps.",
-            "fr": "Nom d'une application installée, ex. Netflix (majuscules et accents indifférents). Laissez les quatre champs vides pour les premières applications installées."
+            "en": "4 apps at most per widget: type the names you want, e.g. Disney+, KiKA, YouTube (case and accents do not matter). Left empty: the first 4 installed apps. For more apps, add a second Roku apps widget.",
+            "fr": "4 applications au plus par widget : saisissez les noms voulus, ex. Disney+, KiKA, YouTube (majuscules et accents indifférents). Vides : les 4 premières applications installées. Pour en avoir plus, ajoutez un second widget Applications Roku."
           },
           "required": false
         },

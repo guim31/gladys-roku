@@ -168,3 +168,10 @@ test('ssdp: Roku replies are read, other devices ignored', () => {
   );
   assert.equal(parseSsdpResult({ headers: '' }), null);
 });
+
+test('Roku OS 15 reports its home screen as "Roku Dynamic Menu" (562859): it is Home', () => {
+  const home = parseActiveApp(fixture('active-app-dynamic-menu.xml'));
+  assert.equal(home.id, HOME_APP_ID);
+  assert.equal(home.name, 'Home');
+  assert.equal(home.home, true);
+});

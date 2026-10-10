@@ -9,7 +9,7 @@ import { normalizeConfig } from './config.js';
 import { RokuManager } from './manager.js';
 import { ACTIONS } from './actions.js';
 import { SCENE_TRIGGER, appChangedEvent, createSceneActions } from './scenes.js';
-import { WIDGET_KEYS, createWidgetHandlers } from './widgets.js';
+import { WIDGET_KEYS, createWidgetHandlers, widgetSignatures } from './widgets.js';
 import { explainError } from './messages.js';
 import { rokuIds } from './devices/roku.js';
 import { createWidgetNudger } from './nudger.js';
@@ -22,13 +22,14 @@ const INITIAL_LOG_LEVEL = process.env.LOG_LEVEL;
  *
  * @param {Object} gladys GladysIntegration (or a stand-in, in the tests).
  * @param {Object} [managerOptions] RokuManager options (tests).
+ * @param {Object} [nudgerOptions] Widget nudger options: `{ now, schedule }` (tests).
  * @returns {{ manager: RokuManager, onConnected: Function, shutdown: Function }}
  */
-export function createApp(gladys, managerOptions = {}) {
+export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
   const manager = new RokuManager(gladys, managerOptions);
   const widgets = createWidgetHandlers(manager);
   const sceneActions = createSceneActions(manager);
-  const nudger = createWidgetNudger(gladys, WIDGET_KEYS);
+  const nudger = createWidgetNudger(gladys, WIDGET_KEYS, nudgerOptions);
 
   let config = normalizeConfig();
   let lastStatus = '';
@@ -74,8 +75,31 @@ export function createApp(gladys, managerOptions = {}) {
     return result;
   }
 
-  manager.on('changed', () => {
+  // Nudge a widget only when what it shows changed: every nudge costs a
+  // content pull, and the core allows 30 a minute per integration (refused
+  // attempts included) before it refuses the pulls AND the button taps.
+  let signatures = {};
+  // Widgets whose button is being handled: the core reloads them itself once
+  // the action resolves, a nudge would cost a second pull.
+  const acting = new Set();
+  function nudgeChangedWidgets() {
+    const next = widgetSignatures(manager);
+    for (const key of WIDGET_KEYS) {
+      if (next[key] !== signatures[key] && !acting.has(key)) {
+        nudger.nudge(key);
+      }
+    }
+    signatures = next;
+  }
+
+  function nudgeAllWidgets() {
+    signatures = widgetSignatures(manager);
     nudger.nudgeAll();
+  }
+
+  manager.on('refreshed', nudgeChangedWidgets);
+  manager.on('changed', () => {
+    nudgeChangedWidgets();
     updateConnectionStatus().catch(() => {});
   });
 
@@ -110,7 +134,7 @@ export function createApp(gladys, managerOptions = {}) {
   gladys.onDeviceCreated(async (device) => {
     // The core dropped the states published before the device existed.
     await manager.deviceCreated(device);
-    nudger.nudgeAll();
+    nudgeAllWidgets();
   });
 
   // --- Manifest actions, scene actions, widgets ----------------------------------
@@ -124,9 +148,14 @@ export function createApp(gladys, managerOptions = {}) {
 
   for (const key of WIDGET_KEYS) {
     gladys.onWidgetGet(key, (request) => widgets.get(key, request));
-    gladys.onWidgetAction(key, (actionKey, params, extra) =>
-      widgets.action(key, actionKey, params, extra),
-    );
+    gladys.onWidgetAction(key, async (actionKey, params, extra) => {
+      acting.add(key);
+      try {
+        return await widgets.action(key, actionKey, params, extra);
+      } finally {
+        acting.delete(key);
+      }
+    });
   }
   gladys.onWidgetGetImage((imageKey) => widgets.image(imageKey));
 
@@ -151,7 +180,7 @@ export function createApp(gladys, managerOptions = {}) {
           await manager.refresh(roku.serial);
         }
       }
-      nudger.nudgeAll();
+      nudgeAllWidgets();
     } catch (err) {
       logger.error('Post-connection initialization failed', err);
       await gladys

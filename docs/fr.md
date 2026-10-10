@@ -102,17 +102,27 @@ Trois widgets sont fournis (Gladys 5.1 ou plus récent). Chacun montre le Roku
 choisi dans ses réglages, ou le premier.
 
 - **Télécommande Roku** — alimentation et application à l'écran, puis
-  **Allumer/Éteindre** (Roku TV) ou **OK** (lecteur), **Accueil**,
-  **Retour**, et **Touches…**, qui ouvre la liste de toutes les touches de
-  l'appareil avec un nombre d'appuis (ex. Volume − × 5).
+  **Allumer/Éteindre** (Roku TV) ou **Lecture/Pause** (lecteur),
+  **Accueil**, **Retour** et **OK**. Un widget a quatre boutons au plus :
+  les autres touches (flèches, volume, sourdine…) sont sur la page de
+  l'appareil et dans l'action de scène « Appuyer sur une touche de
+  télécommande Roku ».
 - **Lecture Roku** — l'icône et le nom de l'application à l'écran, en lecture
-  ou en pause, la position dans la vidéo, et Lecture/Pause, Retour rapide,
-  Avance rapide, Relecture.
-- **Applications Roku** — jusqu'à quatre raccourcis d'applications, avec
-  leurs icônes. Saisissez les noms dans les réglages du widget (ex. Netflix,
-  YouTube, Disney Plus : majuscules et accents indifférents) ; laissez-les
-  vides pour les premières applications installées. L'application à l'écran
-  est marquée.
+  ou en pause, la position dans la vidéo quand une vidéo est ouverte, et
+  Lecture/Pause, Retour rapide, Avance rapide, Relecture.
+- **Applications Roku** — **quatre raccourcis au plus** par widget, avec
+  leurs icônes (une limite du tableau de bord de Gladys). Réglages vides : les
+  quatre premières applications installées ; **saisissez les noms voulus**
+  dans les réglages du widget (ex. `Disney+`, `KiKA`, `YouTube` : majuscules
+  et accents indifférents). Pour en avoir plus, ajoutez un second widget
+  **Applications Roku** avec quatre autres noms. L'application à l'écran est
+  marquée.
+
+**Toutes les applications installées**, sans limite, sont dans la
+fonctionnalité **Application** de l'appareil : ajoutez l'appareil à une boîte
+**Appareils** classique pour choisir n'importe quelle application dans une
+liste, ou utilisez-la dans une scène avec « Contrôler un appareil » (les
+entrées de la TV sont dans la fonctionnalité **Entrée** d'une Roku TV).
 
 Les fonctionnalités de l'appareil peuvent aussi être ajoutées à n'importe
 quelle boîte classique du tableau de bord.

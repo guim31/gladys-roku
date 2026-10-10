@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Home screen of Roku OS 15 (Roku Express 4K, Roku OS 15.3.4), as reported by a tester: the app id and name come from his debug log, the version is made up. -->
+<active-app>
+    <app id="562859" type="appl" version="1.0.0">Roku Dynamic Menu</app>
+</active-app>

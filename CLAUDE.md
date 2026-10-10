@@ -45,7 +45,7 @@ src/nudger.js                     widget refresh nudges at the core's pace (1 / 
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
 docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test; helpers/fakeGladys.js (SDK), helpers/fakeRoku.js (LAN)
+test/                             node --test; helpers: fakeGladys (SDK), fakeRoku (LAN), fakeCore (widgets)
 test/fixtures/ecp/                real ECP answers adapted from python-rokuecp (MIT), anonymized
 test/gladys-rules.test.js         conformance of every discovered device to the core rules
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
@@ -208,8 +208,20 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Le validateur du store limite aussi la `description` des widgets à 100
   caractères** par langue (et le `label` à 3-30) : `test/manifest.test.js` le
   vérifie.
-- **Formulaire derrière un bouton de widget** (`action.fields`) : un cœur qui ne
-  les connaît pas relaie l'appui **sans** `values` ; le refuser avec un message.
+- **Pas de formulaire derrière un bouton de widget** (`action.fields`) : le cœur
+  5.1.4 ne les connaît pas (il relaie l'appui sans `values`), et le SDK 0.14.0
+  ne transmet de toute façon pas `values` au handler. Le spec et le cœur `master`
+  les décrivent : vérifier la version publiée avant de s'en servir.
+- **Budget de rechargement des widgets** (cœur 5.1.4) : **30 « pulls » de
+  contenu par minute et par intégration**, fenêtre fixe, **tentatives refusées
+  comprises**. Au-delà : 429, la boîte garde son ancien contenu, et **un appui
+  sur un bouton est refusé avant d'atteindre le conteneur** (l'action relit le
+  contenu pour vérifier sa clé). Chaque `requestWidgetRefresh` et chaque action
+  coûtent un pull par widget ouvert. Ne relancer un widget que si ce qu'il
+  affiche a changé (`widgetSignatures`), espacer (30 s), TTL longs.
+  `test/helpers/fakeCore.js` simule ce chemin.
+- **Roku OS 15** : l'écran d'accueil est une vraie application, « Roku Dynamic
+  Menu » (id 562859), absente de `/query/apps` : la traiter comme l'accueil.
 - Dans les tests, `AbortSignal.timeout()` ne retient pas la boucle
   d'événements : un faux `fetch` qui attend l'abandon doit garder un minuteur
   actif, sinon `node --test` annule le test.

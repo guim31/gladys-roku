@@ -1,9 +1,9 @@
 // -----------------------------------------------------------------------------
 // Dashboard widgets (Gladys 5.1+).
 //
-//   - remote : power / app / input of a Roku, then Power (Roku TV) or OK,
-//              Home, Back, and a "Keys…" button opening a form with every
-//              remote key of the device (a widget holds 4 buttons at most);
+//   - remote : power / app / input of a Roku, then Power (Roku TV) or
+//              Play/Pause (player), Home, Back and OK (a widget holds 4
+//              buttons at most; every other key is a feature of the device);
 //   - media  : the foreground app, its icon, the playback state and position,
 //              then play/pause, rewind, fast forward, instant replay;
 //   - apps   : up to four app shortcuts (named in the widget settings, the
@@ -20,11 +20,16 @@
 // choice is shown by its icon (`check-circle`), never by the `primary` style
 // (invisible in dark mode). App icons are served by the Roku itself
 // (/query/icon/<id>) and relayed through onWidgetGetImage.
+//
+// The core re-pulls a content at most 30 times a minute per integration, and
+// counts the refused attempts too: beyond, it answers 429 and a tap on a
+// button never reaches the integration (it re-reads the content to check the
+// action key). So the TTLs are long and a widget is only nudged when what it
+// shows changed (widgetSignatures()).
 // -----------------------------------------------------------------------------
 
 import { WIDGET_COLORS, validateWidgetImage } from '@gladysassistant/integration-sdk';
 import { HOME_APP_ID, isTvInput } from './ecp/parse.js';
-import { REMOTE_KEYS, remoteKeysFor } from './devices/roku.js';
 import { explainErrorShort } from './messages.js';
 
 /** Widget keys, declared in the manifest `widgets` (forever: never rename). */
@@ -37,8 +42,10 @@ export const WIDGET = {
 /** The settings naming the apps of the apps widget (forever). */
 export const APP_SETTINGS = ['app_1', 'app_2', 'app_3', 'app_4'];
 
-/** Content freshness, in seconds (the states nudge the widgets sooner). */
-export const WIDGET_TTL_SECONDS = { remote: 60, media: 30, apps: 120, empty: 300 };
+// Content freshness, in seconds. The nudges follow the changes: the TTL only
+// catches up with a missed one, and with the playback position, which drifts
+// without being a change.
+export const WIDGET_TTL_SECONDS = { remote: 600, media: 120, apps: 900, empty: 300 };
 
 const CURRENT_ICON = 'check-circle';
 
@@ -78,9 +85,6 @@ const T = {
   turnOff: { en: 'Turn off', fr: 'Éteindre' },
   back: { en: 'Back', fr: 'Retour' },
   ok: { en: 'OK', fr: 'OK' },
-  keys: { en: 'Keys…', fr: 'Touches…' },
-  key: { en: 'Key', fr: 'Touche' },
-  times: { en: 'Times', fr: 'Nombre de fois' },
   playPause: { en: 'Play / Pause', fr: 'Lecture / Pause' },
   rewind: { en: 'Rewind', fr: 'Retour rapide' },
   forward: { en: 'Fast forward', fr: 'Avance rapide' },
@@ -89,27 +93,6 @@ const T = {
     en: (unknown) => `Not installed: ${unknown}`,
     fr: (unknown) => `Non installées : ${unknown}`,
   },
-};
-
-/** French names of the remote keys, for the "Keys…" form. */
-const KEY_LABELS_FR = {
-  home: 'Accueil',
-  back: 'Retour',
-  up: 'Haut',
-  down: 'Bas',
-  left: 'Gauche',
-  right: 'Droite',
-  select: 'OK',
-  info: 'Options (*)',
-  play: 'Lecture/Pause',
-  rewind: 'Retour rapide',
-  forward: 'Avance rapide',
-  replay: 'Relecture instantanée',
-  volume_up: 'Volume +',
-  volume_down: 'Volume −',
-  volume_mute: 'Sourdine',
-  channel_up: 'Chaîne suivante',
-  channel_down: 'Chaîne précédente',
 };
 
 /** Buttons of fixed meaning: action key -> ECP key. */
@@ -122,8 +105,6 @@ const KEY_BUTTONS = {
   forward: 'Fwd',
   replay: 'InstantReplay',
 };
-
-const MAX_KEY_TIMES = 10;
 
 /**
  * A text cut to a bound, with an ellipsis.
@@ -245,47 +226,6 @@ function refusedCaption(roku) {
 }
 
 /**
- * The options of the "Keys…" form of a Roku.
- *
- * @param {Object} roku The Roku.
- * @returns {Array<{ value: string, label: Object }>} Options.
- */
-export function keyOptions(roku) {
-  const options = remoteKeysFor(roku.info).map((remoteKey) => ({
-    value: remoteKey.key,
-    label: { en: remoteKey.name, fr: KEY_LABELS_FR[remoteKey.key] ?? remoteKey.name },
-  }));
-  if (roku.info.isTv) {
-    options.push({ value: 'power_on', label: T.turnOn }, { value: 'power_off', label: T.turnOff });
-  }
-  return options;
-}
-
-function keysButton(roku, params) {
-  return button(T.keys, 'keys', params, 'grid', {
-    fields: [
-      {
-        key: 'key',
-        type: 'select',
-        label: T.key,
-        required: true,
-        default: 'select',
-        options: keyOptions(roku),
-      },
-      {
-        key: 'times',
-        type: 'number',
-        label: T.times,
-        required: false,
-        default: 1,
-        min: 1,
-        max: MAX_KEY_TIMES,
-      },
-    ],
-  });
-}
-
-/**
  * The "remote" widget.
  *
  * @param {Object} roku The Roku.
@@ -298,8 +238,10 @@ export function remoteContent(roku) {
         button(isOn(roku) ? T.turnOff : T.turnOn, 'power', params, 'power'),
         button(T.home, 'home', params, 'home'),
         button(T.back, 'back', params, 'corner-up-left'),
+        button(T.ok, 'ok', params, 'check'),
       ]
     : [
+        button(T.playPause, 'play_pause', params, roku.state?.playing ? 'pause' : 'play'),
         button(T.home, 'home', params, 'home'),
         button(T.back, 'back', params, 'corner-up-left'),
         button(T.ok, 'ok', params, 'check'),
@@ -312,7 +254,6 @@ export function remoteContent(roku) {
       ...refusedCaption(roku),
       { type: 'status', items: [powerStatus(roku), ...appRows(roku)] },
       ...buttons,
-      keysButton(roku, params),
     ],
   };
 }
@@ -347,9 +288,11 @@ function playbackRows(roku) {
   } else {
     rows.push({ label: T.playback, value: T.stopped, color: WIDGET_COLORS.NEUTRAL });
   }
-  if (media?.live) {
+  // A closed player keeps its last position: shown only while a video is open.
+  const open = media?.state === 'play' || media?.state === 'pause';
+  if (open && media.live) {
     rows.push({ label: T.position, value: T.live });
-  } else if (media?.positionMs !== null && media?.positionMs !== undefined) {
+  } else if (open && media.positionMs !== null && media.positionMs !== undefined) {
     const position = clock(media.positionMs);
     rows.push({
       label: T.position,
@@ -389,8 +332,9 @@ export function mediaContent(roku) {
       fit: 'contain',
     });
   }
-  const rows = isOn(roku) ? [...appRows(roku), ...playbackRows(roku)] : [powerStatus(roku)];
-  components.push({ type: 'status', items: rows });
+  const rows = isOn(roku) ? [...appRows(roku), ...playbackRows(roku)] : [];
+  // Never an empty list: the core would drop the component.
+  components.push({ type: 'status', items: rows.length > 0 ? rows : [powerStatus(roku)] });
   components.push(
     button(T.playPause, 'play_pause', params, roku.state?.playing ? 'pause' : 'play'),
     button(T.rewind, 'rewind', params, 'rewind'),
@@ -489,11 +433,10 @@ export function appsContent(roku, settings, language, findApp) {
  *
  * @param {string} actionKey Button action key.
  * @param {Object} params Its params ({ serial, app? }).
- * @param {Object} [values] The form values ("Keys…" button).
- * @returns {Object|null} `{ kind: 'power'|'key'|'app', serial, ecp?, times?, on?, app? }`,
+ * @returns {Object|null} `{ kind: 'power'|'key'|'app', serial, ecp?, times?, app? }`,
  * null for anything else.
  */
-export function widgetCommand(actionKey, params = {}, values = undefined) {
+export function widgetCommand(actionKey, params = {}) {
   const serial = typeof params?.serial === 'string' ? params.serial.trim() : '';
   if (!serial) {
     return null;
@@ -504,19 +447,38 @@ export function widgetCommand(actionKey, params = {}, values = undefined) {
   if (KEY_BUTTONS[actionKey]) {
     return { kind: 'key', serial, ecp: KEY_BUTTONS[actionKey], times: 1 };
   }
-  if (actionKey === 'keys') {
-    const key = values?.key;
-    const times = Math.min(Math.max(Math.trunc(Number(values?.times) || 1), 1), MAX_KEY_TIMES);
-    if (key === 'power_on' || key === 'power_off') {
-      return { kind: 'power', serial, on: key === 'power_on' };
-    }
-    const remoteKey = REMOTE_KEYS.find((entry) => entry.key === key);
-    return remoteKey ? { kind: 'key', serial, ecp: remoteKey.ecp, times } : null;
-  }
   if (APP_SETTINGS.includes(actionKey) && typeof params.app === 'string' && params.app.trim()) {
     return { kind: 'app', serial, app: params.app.trim() };
   }
   return null;
+}
+
+/** Wait before re-reading a Roku after a widget command (ECP state lags). */
+export const SETTLE_AFTER_ACTION_MS = 1000;
+
+/**
+ * Run a widget command.
+ *
+ * @param {Object} manager RokuManager.
+ * @param {Object} command See widgetCommand().
+ * @param {Object} roku The Roku.
+ * @returns {Promise<{ en: string, fr: string }>} The toast.
+ */
+async function runCommand(manager, command, roku) {
+  if (command.kind === 'power') {
+    const on = !isOn(roku);
+    await manager.setPower(command.serial, on);
+    return on
+      ? { en: 'Turning the TV on…', fr: 'Allumage de la TV…' }
+      : { en: 'Turning the TV off…', fr: 'Extinction de la TV…' };
+  }
+  if (command.kind === 'app') {
+    await manager.launch(command.serial, command.app);
+    const name = fit(listedApp(roku, command.app)?.name ?? command.app, 40);
+    return { en: `Opening ${name}…`, fr: `Ouverture de ${name}…` };
+  }
+  await manager.pressKey(command.serial, command.ecp, command.times);
+  return { en: 'Key sent to the Roku.', fr: 'Touche envoyée au Roku.' };
 }
 
 /**
@@ -544,31 +506,19 @@ export function createWidgetHandlers(manager) {
       throw new Error(`Unknown widget: ${key}`);
     },
 
-    async action(_key, actionKey, params, { values } = {}) {
-      const command = widgetCommand(actionKey, params, values);
+    async action(_key, actionKey, params) {
+      const command = widgetCommand(actionKey, params);
       if (!command) {
-        if (actionKey === 'keys' && !values) {
-          // A core without widget forms relays the tap without its values.
-          throw new Error('This Gladys version cannot show the key form: update Gladys.');
-        }
         throw new Error(`Unknown widget action: ${actionKey}`);
       }
       const roku = manager.require(command.serial);
       try {
-        if (command.kind === 'power') {
-          const on = command.on ?? !isOn(roku);
-          await manager.setPower(command.serial, on);
-          return on
-            ? { en: 'Turning the TV on…', fr: 'Allumage de la TV…' }
-            : { en: 'Turning the TV off…', fr: 'Extinction de la TV…' };
-        }
-        if (command.kind === 'app') {
-          await manager.launch(command.serial, command.app);
-          const name = fit(listedApp(roku, command.app)?.name ?? command.app, 40);
-          return { en: `Opening ${name}…`, fr: `Ouverture de ${name}…` };
-        }
-        await manager.pressKey(command.serial, command.ecp, command.times);
-        return { en: 'Key sent to the Roku.', fr: 'Touche envoyée au Roku.' };
+        const toast = await runCommand(manager, command, roku);
+        // Read the Roku again before answering: the core reloads this widget
+        // as soon as the action resolves, it then shows the new state.
+        await manager.sleep(SETTLE_AFTER_ACTION_MS);
+        await manager.refresh(command.serial).catch(() => {});
+        return toast;
       } catch (err) {
         if (err?.kind) {
           return explainErrorShort(err);
@@ -600,6 +550,41 @@ export function createWidgetHandlers(manager) {
       }
       throw new Error(`Unknown image: ${imageKey}`);
     },
+  };
+}
+
+/**
+ * What each widget shows of the Rokus, as one string per widget key: a
+ * widget is nudged only when its string changed. The playback position is
+ * left out on purpose: it changes on every poll, the TTL refreshes it.
+ *
+ * @param {Object} manager RokuManager.
+ * @returns {{ remote: string, media: string, apps: string }} Signatures.
+ */
+export function widgetSignatures(manager) {
+  const rokus = manager.knownRokus();
+  const base = (roku) => [
+    roku.serial,
+    roku.info.name,
+    isOn(roku),
+    roku.reachable,
+    roku.error?.kind ?? '',
+    currentApp(roku)?.id ?? '',
+  ];
+  return {
+    [WIDGET.REMOTE]: JSON.stringify(
+      rokus.map((roku) => [...base(roku), roku.state?.playing === true]),
+    ),
+    [WIDGET.MEDIA]: JSON.stringify(
+      rokus.map((roku) => [
+        ...base(roku),
+        roku.state?.playing ?? null,
+        roku.state?.media?.state ?? '',
+      ]),
+    ),
+    [WIDGET.APPS]: JSON.stringify(
+      rokus.map((roku) => [...base(roku), (roku.apps ?? []).map((app) => app.id).join(',')]),
+    ),
   };
 }
 

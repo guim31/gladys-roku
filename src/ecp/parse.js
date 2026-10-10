@@ -9,9 +9,12 @@
 
 import { child, childText, parseXml } from './xml.js';
 
-// The app Roku reports on its home screen (no id), and the one it reports
-// while the "Power Saver" screen of some players is shown.
-const HOME_APP_NAMES = new Set(['Roku', 'Power Saver']);
+// The app Roku reports on its home screen: no id and "Roku" on older Roku OS,
+// "Power Saver" while the power saver screen of some players is shown, and
+// on Roku OS 15 a real app, "Roku Dynamic Menu" (id 562859), seen by a tester
+// on a Roku Express 4K. All of them are the home screen for the user.
+const HOME_APP_NAMES = new Set(['Roku', 'Power Saver', 'Roku Dynamic Menu']);
+const HOME_APP_IDS = new Set(['562859']);
 
 /** Value of the "home screen" option of the application and input selects. */
 export const HOME_APP_ID = 'home';
@@ -142,7 +145,7 @@ export function parseActiveApp(xml) {
   const screensaver = Boolean(child(root, 'screensaver'));
   const id = app?.attrs.id;
   const name = app?.text || '';
-  if (!id || HOME_APP_NAMES.has(name)) {
+  if (!id || HOME_APP_IDS.has(id) || HOME_APP_NAMES.has(name)) {
     return { id: HOME_APP_ID, name: 'Home', type: 'home', version: '', home: true, screensaver };
   }
   return {
