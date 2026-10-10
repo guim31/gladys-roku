@@ -90,6 +90,9 @@ export class RokuClient {
    */
   async request(method, path, as = 'text') {
     const started = Date.now();
+    // A typed character never reaches the logs or an error message: it may
+    // belong to a login.
+    const shown = path.startsWith('/keypress/Lit_') ? '/keypress/Lit_*' : path;
     let response;
     try {
       response = await this.fetch(`${this.baseUrl}${path}`, {
@@ -102,40 +105,40 @@ export class RokuClient {
       const code = networkErrorCode(err);
       const elapsed = Date.now() - started;
       if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
-        log.debug(`${method} ${this.ip}${path} -> timeout after ${elapsed} ms`);
+        log.debug(`${method} ${this.ip}${shown} -> timeout after ${elapsed} ms`);
         throw new RokuError(`No answer from ${this.ip} within ${this.timeoutMs} ms`, {
           kind: 'timeout',
           ip: this.ip,
-          path,
+          path: shown,
           cause: err,
         });
       }
-      log.debug(`${method} ${this.ip}${path} -> ${code || err?.message} after ${elapsed} ms`);
+      log.debug(`${method} ${this.ip}${shown} -> ${code || err?.message} after ${elapsed} ms`);
       throw new RokuError(`Cannot reach ${this.ip}:${ECP_PORT} (${code || err?.message})`, {
         kind: code === 'ECONNREFUSED' ? 'refused' : 'unreachable',
         ip: this.ip,
-        path,
+        path: shown,
         cause: err,
       });
     }
     const elapsed = Date.now() - started;
-    log.debug(`${method} ${this.ip}${path} -> HTTP ${response.status} (${elapsed} ms)`);
+    log.debug(`${method} ${this.ip}${shown} -> HTTP ${response.status} (${elapsed} ms)`);
     if (response.status === 401 || response.status === 403) {
       // The body says why (Limited mode, disabled...): useful in a bug report.
       const reason = (await response.text().catch(() => '')).slice(0, 200).trim();
-      log.debug(`${this.ip}${path} refused by the Roku${reason ? `: ${reason}` : ''}`);
-      throw new RokuError(`The Roku at ${this.ip} refused ${path} (HTTP ${response.status})`, {
+      log.debug(`${this.ip}${shown} refused by the Roku${reason ? `: ${reason}` : ''}`);
+      throw new RokuError(`The Roku at ${this.ip} refused ${shown} (HTTP ${response.status})`, {
         kind: 'forbidden',
         ip: this.ip,
-        path,
+        path: shown,
         status: response.status,
       });
     }
     if (!response.ok) {
-      throw new RokuError(`The Roku at ${this.ip} answered HTTP ${response.status} to ${path}`, {
+      throw new RokuError(`The Roku at ${this.ip} answered HTTP ${response.status} to ${shown}`, {
         kind: 'http',
         ip: this.ip,
-        path,
+        path: shown,
         status: response.status,
       });
     }

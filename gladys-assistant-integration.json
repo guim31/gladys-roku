@@ -237,6 +237,35 @@
           "max": 20
         }
       ]
+    },
+    {
+      "key": "type_text",
+      "label": { "en": "Type a text on a Roku", "fr": "Taper un texte sur un Roku" },
+      "description": {
+        "en": "Type a text in the field shown on the Roku (search, login), one character at a time. Not for a sensitive password: a scene is readable by every Gladys user.",
+        "fr": "Tape un texte dans le champ affiché sur le Roku (recherche, identifiant), caractère par caractère. Pas de mot de passe sensible : une scène est lisible par tous les utilisateurs de Gladys."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Roku", "fr": "Roku" },
+          "required": true
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": { "en": "Text to type", "fr": "Texte à taper" },
+          "description": {
+            "en": "Up to 100 characters. Open the field on the Roku first (the cursor must be in it).",
+            "fr": "100 caractères au plus. Ouvrez d'abord le champ sur le Roku (le curseur doit y être)."
+          },
+          "placeholder": { "en": "e.g. stranger things", "fr": "ex. stranger things" },
+          "required": true
+        }
+      ]
     }
   ],
   "widgets": [
@@ -244,8 +273,8 @@
       "key": "remote",
       "label": { "en": "Roku remote", "fr": "Télécommande Roku" },
       "description": {
-        "en": "Power and foreground app of a Roku, with Power (Roku TV) or OK, Home, Back and every other key.",
-        "fr": "Alimentation et application d'un Roku, avec Marche ou OK, Accueil, Retour et toutes les touches."
+        "en": "Power and foreground app of a Roku, with Power (Roku TV) or Play/Pause, Home, Back and OK.",
+        "fr": "Alimentation et application d'un Roku, avec Marche (Roku TV) ou Lecture, Accueil, Retour, OK."
       },
       "icon": "tv",
       "settings": [
@@ -311,8 +340,8 @@
           "type": "string",
           "label": { "en": "App 1", "fr": "Application 1" },
           "description": {
-            "en": "Name of an installed app, e.g. Netflix (case and accents do not matter). Leave the four fields empty for the first installed apps.",
-            "fr": "Nom d'une application installée, ex. Netflix (majuscules et accents indifférents). Laissez les quatre champs vides pour les premières applications installées."
+            "en": "4 apps at most per widget: type the names you want, e.g. Disney+, KiKA, YouTube (case and accents do not matter). Left empty: the first 4 installed apps. For more apps, add a second Roku apps widget.",
+            "fr": "4 applications au plus par widget : saisissez les noms voulus, ex. Disney+, KiKA, YouTube (majuscules et accents indifférents). Vides : les 4 premières applications installées. Pour en avoir plus, ajoutez un second widget Applications Roku."
           },
           "required": false
         },
@@ -332,6 +361,29 @@
           "key": "app_4",
           "type": "string",
           "label": { "en": "App 4", "fr": "Application 4" },
+          "required": false
+        }
+      ],
+      "action_timeout_seconds": 20
+    },
+    {
+      "key": "navigation",
+      "label": { "en": "Roku navigation", "fr": "Navigation Roku" },
+      "description": {
+        "en": "The arrows of the Roku remote: up, down, left, right. Place it next to the Roku remote.",
+        "fr": "Les flèches de la télécommande Roku : haut, bas, gauche, droite. À placer près de la télécommande."
+      },
+      "icon": "move",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Roku", "fr": "Roku" },
+          "description": {
+            "en": "Leave empty to show the first Roku.",
+            "fr": "Laissez vide pour afficher le premier Roku."
+          },
           "required": false
         }
       ],

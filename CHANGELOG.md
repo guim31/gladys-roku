@@ -10,6 +10,34 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Added
+
+- Roku navigation widget: the four arrows, to place next to the Roku remote.
+- "Type a text on a Roku" scene action, for a search or a login: start it from
+  a Scene box of the dashboard. The typed text never goes to the logs.
+
+### Fixed
+
+- The buttons of the dashboard widgets (Play/Pause, Replay… of Roku playback)
+  could stop reaching the Roku after a minute of use: the widgets asked Gladys
+  to reload them so often that Gladys refused the reloads, and with them the
+  button taps. A widget is now reloaded only when what it shows changed, at
+  most every 30 seconds, and shows the new state of the Roku right after a tap.
+- The home screen of Roku OS 15 ("Roku Dynamic Menu") is shown as Home, and
+  fires the "Roku app changed" trigger as Home.
+- Roku playback no longer shows the last position of a closed video.
+
+### Changed
+
+- Roku remote: Power (Roku TV) or Play/Pause (player), Home, Back and OK. The
+  "Keys…" button is removed: its form needs a Gladys version not released yet
+  (5.1.4 shows the button but sends nothing). The arrows are in the new Roku
+  navigation widget, every key on the device page and in the "Press a Roku
+  remote key" scene action.
+- Roku apps: the settings and the documentation say it plainly, four apps at
+  most per widget, named in the settings (add a second widget for more); every
+  app is in the Application feature of the device.
+
 ## [1.0.2] - 2026-10-09
 
 ## [1.0.1] - 2026-10-09

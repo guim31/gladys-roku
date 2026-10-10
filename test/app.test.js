@@ -6,19 +6,20 @@ import { readFileSync } from 'node:fs';
 import { createApp } from '../src/app.js';
 import { createFakeGladys } from './helpers/fakeGladys.js';
 import { LAN, createReferenceLan } from './helpers/fakeRoku.js';
+import { createVirtualTime } from './helpers/fakeCore.js';
 
 const ssdpResults = JSON.parse(
   readFileSync(new URL('./fixtures/ecp/ssdp-results.json', import.meta.url), 'utf8'),
 );
 
-function setup({ config = {}, devices = [] } = {}) {
+function setup({ config = {}, devices = [], time } = {}) {
   const gladys = createFakeGladys({ scanResults: { ssdp: ssdpResults }, config, devices });
   const lan = createReferenceLan();
-  const app = createApp(gladys, {
-    createClient: lan.createClient,
-    schedule: () => 0,
-    sleep: async () => {},
-  });
+  const app = createApp(
+    gladys,
+    { createClient: lan.createClient, schedule: () => 0, sleep: async () => {} },
+    time ? { now: time.now, schedule: time.schedule } : {},
+  );
   return { gladys, lan, app };
 }
 
@@ -27,7 +28,7 @@ test('connection: SSDP + typed addresses published to the Discovery tab, status 
   await gladys.handlers.on.connected();
   assert.equal(gladys.discovered.length, 3);
   assert.deepEqual(gladys.connectionStatuses.at(-1), { connected: true, message: undefined });
-  assert.deepEqual(gladys.widgetRefreshes.sort(), ['apps', 'media', 'remote']);
+  assert.deepEqual(gladys.widgetRefreshes.sort(), ['apps', 'media', 'navigation', 'remote']);
   app.shutdown();
 });
 
@@ -120,5 +121,46 @@ test('debug logs follow the configuration, live', async () => {
   // Back to the level the container started with.
   assert.notEqual(process.env.LOG_LEVEL, 'debug');
   process.env.LOG_LEVEL = saved;
+  app.shutdown();
+});
+
+test('going Home on Roku OS 15 fires app_changed with "Home", not "Roku Dynamic Menu"', async () => {
+  const { gladys, lan, app } = setup();
+  await gladys.handlers.on.connected();
+  const device = gladys.discovered.find((d) => d.external_id.endsWith(LAN.box.serial));
+  await gladys.handlers.deviceCreated(device);
+  lan.roku(LAN.box.ip).activeApp = 'active-app-dynamic-menu.xml';
+  await gladys.handlers.poll(device);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(gladys.sceneEvents.at(-1), {
+    key: 'app_changed',
+    data: { device: device.external_id, app: 'Home', app_id: 'home' },
+  });
+  assert.equal(gladys.lastState(`${device.external_id}:app`), 'home');
+  const content = await gladys.handlers.widgetGet.remote({ settings: {}, language: 'en' });
+  const status = content.components.find((c) => c.type === 'status');
+  assert.deepEqual(status.items[1].value, { en: 'Home', fr: 'Accueil' });
+  app.shutdown();
+});
+
+test('a widget is nudged only when what it shows changed', async () => {
+  const time = createVirtualTime();
+  const { gladys, lan, app } = setup({ time });
+  await gladys.handlers.on.connected();
+  const device = gladys.discovered.find((d) => d.external_id.endsWith(LAN.box.serial));
+  await gladys.handlers.deviceCreated(device);
+  await gladys.handlers.poll(device);
+  await time.advance(60 * 1000);
+  const before = gladys.widgetRefreshes.length;
+  // Nothing changed on the Roku: no nudge, even once the window is over.
+  await gladys.handlers.poll(device);
+  await gladys.handlers.poll(device);
+  await time.advance(60 * 1000);
+  assert.equal(gladys.widgetRefreshes.length, before);
+  // The app changes: the three widgets show it, all three are nudged.
+  const settled = gladys.widgetRefreshes.length;
+  lan.roku(LAN.box.ip).activeApp = 'active-app-pluto.xml';
+  await gladys.handlers.poll(device);
+  assert.deepEqual(gladys.widgetRefreshes.slice(settled).sort(), ['apps', 'media', 'remote']);
   app.shutdown();
 });

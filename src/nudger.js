@@ -1,13 +1,16 @@
 // -----------------------------------------------------------------------------
 // Widget refresh nudges, at the pace the core accepts.
 //
-// The core takes one `requestWidgetRefresh` per widget every 10 seconds and
-// silently drops the others. A state change right after a nudge must not be
-// lost: the nudge is postponed to the end of the window instead (trailing
-// edge), so the dashboard always ends up showing the last state.
+// The core takes one `requestWidgetRefresh` per widget every 10 seconds, but
+// each nudge costs a content pull, and the core refuses pulls past 30 a
+// minute per integration — then refuses the button taps too, as a tap
+// re-reads the content. So a widget is nudged at most every 30 seconds. A
+// state change right after a nudge must not be lost: the nudge is postponed
+// to the end of the window instead (trailing edge), so the dashboard always
+// ends up showing the last state.
 // -----------------------------------------------------------------------------
 
-export const NUDGE_INTERVAL_MS = 10000;
+export const NUDGE_INTERVAL_MS = 30000;
 
 /**
  * @param {Object} gladys SDK instance.

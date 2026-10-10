@@ -83,23 +83,35 @@ States are refreshed every 10 seconds. The list of apps is read again every
   Ethernet than over Wi-Fi.
 - **Volume and power keys of a player** (Roku Voice Remote buttons that drive
   your TV through HDMI-CEC or infrared) are not reachable over the network.
-- **Typing text** (search fields) is not supported yet.
+- **Typing text** goes through a scene only (see
+  [Typing a text](#typing-a-text-search-login)): no dashboard field can send
+  text to an integration yet.
 
 ## Dashboard
 
-Three widgets come with the integration (Gladys 5.1 or later). Each one shows
+Four widgets come with the integration (Gladys 5.1 or later). Each one shows
 the Roku picked in its settings, or the first one.
 
 - **Roku remote** — power and app on screen, then **Power** (Roku TV) or
-  **OK** (player), **Home**, **Back**, and **Keys…**, which opens the list of
-  every key of the device with a number of presses (e.g. Volume down × 5).
+  **Play/Pause** (player), **Home**, **Back** and **OK**. A widget holds four
+  buttons at most: put the **Roku navigation** widget next to it for the
+  arrows; every other key (volume, mute…) is on the device page and in the
+  "Press a Roku remote key" scene action.
+- **Roku navigation** — the four arrows: Up, Down, Left, Right.
 - **Roku playback** — the icon and name of the app on screen, playing or
-  paused, the position in the video, and Play/Pause, Rewind, Fast forward,
-  Instant replay.
-- **Roku apps** — up to four app shortcuts, with their icons. Type the names
-  in the widget settings (e.g. Netflix, YouTube, Disney Plus: case and accents
-  do not matter); leave them empty for the first apps installed. The app on
+  paused, the position in the video while one is open, and Play/Pause,
+  Rewind, Fast forward, Instant replay.
+- **Roku apps** — **four app shortcuts at most** per widget, with their icons
+  (a limit of the Gladys dashboard). Left empty, the settings show the first
+  four apps installed; **type the names you want** in the widget settings
+  (e.g. `Disney+`, `KiKA`, `YouTube`: case and accents do not matter). For
+  more, add a second **Roku apps** widget with four other names. The app on
   screen is marked.
+
+**Every installed app**, without limit, is in the **Application** feature of
+the device: add the device to a regular **Devices** box to pick any app from a
+list, or use it in a scene with "Set device value" (the TV inputs are
+in the **Input** feature of a Roku TV).
 
 The features of the device can also be added to any regular dashboard box.
 
@@ -119,8 +131,25 @@ The integration adds its own cards to the scene editor, under the
   including Turn on and Turn off for a Roku TV. Example: _when the doorbell
   rings, press Play/Pause_.
 
+- **Type a text on a Roku** (action) — types a text in the field shown on
+  the Roku, see below.
+
 The power and playback states are regular device features: a scene can start
 when the TV turns off, or check that something is playing.
+
+### Typing a text (search, login)
+
+Gladys has no text field on the dashboard that an integration can receive
+yet. The workaround:
+
+1. On the Roku, open the field (a search, the email of a login…).
+2. In Gladys, create a scene with the **Type a text on a Roku** action and
+   the text to type (100 characters at most).
+3. Add a **Scene** box to your dashboard with that scene: one tap types the
+   text.
+
+Do **not** put a sensitive password in a scene: every Gladys user can read the
+scenes. The integration never writes the typed text in its logs.
 
 ## Troubleshooting
 

@@ -8,7 +8,8 @@
 // addresses typed in the configuration.
 //
 // The manager never talks to the dashboard or the scene engine itself: it
-// emits `changed` (serial) after a refresh that changed something, and
+// emits `refreshed` (roku) after every read, `changed` (roku) after a read
+// that changed something, and
 // `appChanged` (serial, previous, current) when the foreground app changed —
 // index.js turns them into widget refreshes and scene events.
 // -----------------------------------------------------------------------------
@@ -50,6 +51,8 @@ const WAKE_ATTEMPTS = 4;
 const WAKE_RETRY_DELAY_MS = 2500;
 
 const NETWORK_ERRORS = new Set(['unreachable', 'timeout', 'refused']);
+/** Longest text typed by the type_text scene action (one request per character). */
+export const MAX_TEXT_LENGTH = 100;
 
 /**
  * Lowercase, accent-free, alphanumeric form of an app name, to match what a
@@ -475,6 +478,8 @@ export class RokuManager extends EventEmitter {
     ) {
       this.emit('changed', roku);
     }
+    // After every read, changed or not: the widgets compare what they show.
+    this.emit('refreshed', roku);
     return roku;
   }
 
@@ -652,6 +657,31 @@ export class RokuManager extends EventEmitter {
     await this.run(roku, async (client) => {
       for (let i = 0; i < times; i += 1) {
         await client.keypress(ecpKey);
+      }
+    });
+  }
+
+  /**
+   * Type a text in the field the Roku shows, one `Lit_` key per character
+   * (the only text input ECP has). The text is never logged: it may be a
+   * login.
+   *
+   * @param {string} serial Serial number.
+   * @param {string} text Text, at most MAX_TEXT_LENGTH characters.
+   */
+  async typeText(serial, text) {
+    const roku = this.require(serial);
+    const characters = [...String(text ?? '')];
+    if (characters.length === 0) {
+      throw new Error('No text to type');
+    }
+    if (characters.length > MAX_TEXT_LENGTH) {
+      throw new Error(`The text holds ${characters.length} characters, ${MAX_TEXT_LENGTH} at most`);
+    }
+    log.debug(`${this.label(roku)}: typing ${characters.length} characters`);
+    await this.run(roku, async (client) => {
+      for (const character of characters) {
+        await client.keypress(`Lit_${character}`);
       }
     });
   }

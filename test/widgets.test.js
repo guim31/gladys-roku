@@ -13,6 +13,7 @@ import {
   emptyContent,
   iconKey,
   widgetCommand,
+  widgetSignatures,
 } from '../src/widgets.js';
 import { createFakeGladys } from './helpers/fakeGladys.js';
 import { LAN, createReferenceLan } from './helpers/fakeRoku.js';
@@ -69,20 +70,17 @@ test('every widget fits the core budget, for every reference Roku and language',
   }
 });
 
-test('remote: Power on a Roku TV, OK on a player, and a "Keys…" form', async () => {
+test('remote: Power on a Roku TV, Play/Pause on a player, then Home, Back, OK', async () => {
   const { widgets } = await setup();
   const tv = await widgets.get('remote', { settings: { device: deviceOf(LAN.tv.serial) } });
   const tvKeys = tv.components.filter((c) => c.type === 'button').map((c) => c.action.key);
-  assert.deepEqual(tvKeys, ['power', 'home', 'back', 'keys']);
-  const form = tv.components.find((c) => c.action?.key === 'keys').action.fields;
-  const values = form[0].options.map((option) => option.value);
-  assert.ok(values.includes('volume_mute') && values.includes('power_on'));
+  assert.deepEqual(tvKeys, ['power', 'home', 'back', 'ok']);
 
   const box = await widgets.get('remote', { settings: { device: deviceOf(LAN.box.serial) } });
   const boxKeys = box.components.filter((c) => c.type === 'button').map((c) => c.action.key);
-  assert.deepEqual(boxKeys, ['home', 'back', 'ok', 'keys']);
-  const boxForm = box.components.find((c) => c.action?.key === 'keys').action.fields;
-  assert.ok(!boxForm[0].options.some((option) => option.value === 'volume_up'));
+  assert.deepEqual(boxKeys, ['play_pause', 'home', 'back', 'ok']);
+  // No form behind a button: Gladys 5.1.4 and SDK 0.14.0 relay no typed value.
+  assert.ok(box.components.every((c) => !c.action?.fields));
   const status = box.components.find((c) => c.type === 'status');
   assert.deepEqual(status.items[1], { label: { en: 'App', fr: 'Application' }, value: 'Netflix' });
 });
@@ -164,24 +162,25 @@ test('widget commands: only the declared buttons', () => {
     ecp: 'Select',
     times: 1,
   });
-  assert.deepEqual(widgetCommand('keys', params, { key: 'volume_up', times: 3 }), {
-    kind: 'key',
-    serial: 'S1',
-    ecp: 'VolumeUp',
-    times: 3,
-  });
-  assert.equal(widgetCommand('keys', params, { key: 'up', times: 99 }).times, 10);
-  assert.deepEqual(widgetCommand('keys', params, { key: 'power_off' }), {
-    kind: 'power',
-    serial: 'S1',
-    on: false,
-  });
+  for (const [actionKey, ecp] of [
+    ['play_pause', 'Play'],
+    ['rewind', 'Rev'],
+    ['forward', 'Fwd'],
+    ['replay', 'InstantReplay'],
+  ]) {
+    assert.deepEqual(widgetCommand(actionKey, params), {
+      kind: 'key',
+      serial: 'S1',
+      ecp,
+      times: 1,
+    });
+  }
   assert.deepEqual(widgetCommand('app_2', { serial: 'S1', app: '12' }), {
     kind: 'app',
     serial: 'S1',
     app: '12',
   });
-  assert.equal(widgetCommand('keys', params, { key: 'rm -rf' }), null);
+  assert.equal(widgetCommand('keys', params), null);
   assert.equal(widgetCommand('app_9', { serial: 'S1', app: '12' }), null);
   assert.equal(widgetCommand('home', {}), null);
 });
@@ -194,15 +193,19 @@ test('widget actions run the command and answer a toast', async () => {
     en: 'Turning the TV off…',
     fr: 'Extinction de la TV…',
   });
-  await widgets.action('remote', 'keys', tv, { values: { key: 'volume_down', times: 2 } });
+  await widgets.action('media', 'replay', tv);
   const toast = await widgets.action('apps', 'app_1', { serial: LAN.box.serial, app: '12' });
   assert.equal(toast.en, 'Opening Netflix…');
+  // Each command is followed by a read of the Roku, before the toast: the
+  // core reloads the widget as soon as the action resolves.
+  assert.deepEqual(lan.calls.map((call) => call.op).filter((op) => op === 'deviceInfo').length, 3);
   assert.deepEqual(
-    lan.calls.map((call) => `${call.ip} ${call.op} ${call.arg}`),
+    lan.calls
+      .filter((call) => call.op === 'keypress' || call.op === 'launch')
+      .map((call) => `${call.ip} ${call.op} ${call.arg}`),
     [
       `${LAN.tv.ip} keypress PowerOff`,
-      `${LAN.tv.ip} keypress VolumeDown`,
-      `${LAN.tv.ip} keypress VolumeDown`,
+      `${LAN.tv.ip} keypress InstantReplay`,
       `${LAN.box.ip} launch 12`,
     ],
   );
@@ -212,7 +215,7 @@ test('widget actions run the command and answer a toast', async () => {
   assert.match(refused.en, /Network access/);
   assert.ok(refused.en.length <= 200 && refused.fr.length <= 200);
 
-  await assert.rejects(widgets.action('remote', 'keys', tv), /update Gladys/);
+  await assert.rejects(widgets.action('remote', 'keys', tv), /Unknown widget action/);
   await assert.rejects(widgets.action('remote', 'nope', tv), /Unknown widget action/);
 });
 
@@ -233,4 +236,55 @@ test('icon keys follow the app version and stay within the core pattern', () => 
   assert.match(long, /^[a-z0-9][a-z0-9-]{0,63}$/);
   assert.equal(clock(3723000), '1:02:03');
   assert.equal(clock(59000), '0:59');
+});
+
+test('media: a closed player hides its last position; the status list is never empty', async () => {
+  const { lan, manager, widgets } = await setup();
+  lan.roku(LAN.box.ip).media = 'media-player-close.xml';
+  const roku = manager.rokus.get(LAN.box.serial);
+  await manager.refresh(LAN.box.serial);
+  roku.state.media = { ...roku.state.media, positionMs: 301000 };
+  const content = await widgets.get('media', { settings: { device: deviceOf(LAN.box.serial) } });
+  const rows = content.components.find((c) => c.type === 'status').items;
+  assert.ok(!rows.some((row) => row.label.en === 'Position'), 'no position for a closed player');
+  assert.equal(rows.at(-1).value.en, 'Stopped');
+
+  // A Roku known but not polled yet (no app read): the power row, not an empty list.
+  roku.state.app = undefined;
+  const empty = await widgets.get('media', { settings: { device: deviceOf(LAN.box.serial) } });
+  assert.equal(empty.components.find((c) => c.type === 'status').items.length, 1);
+});
+
+test('widget signatures ignore the playback position', async () => {
+  const { manager } = await setup();
+  const roku = manager.rokus.get(LAN.box.serial);
+  const before = widgetSignatures(manager);
+  roku.state.media = { ...roku.state.media, positionMs: 999000 };
+  assert.deepEqual(widgetSignatures(manager), before);
+  roku.state.app = { id: '13', name: 'Amazon Video on Demand', home: false };
+  const after = widgetSignatures(manager);
+  for (const key of ['remote', 'media', 'apps']) {
+    assert.notEqual(after[key], before[key], `${key} shows the app`);
+  }
+  // The arrows show no app: no reload for them.
+  assert.equal(after.navigation, before.navigation);
+});
+
+test('navigation: the four arrows, sent as the Up/Down/Left/Right keys', async () => {
+  const { lan, widgets } = await setup();
+  const content = await widgets.get('navigation', {
+    settings: { device: deviceOf(LAN.tv.serial) },
+  });
+  assert.deepEqual(
+    content.components.filter((c) => c.type === 'button').map((c) => c.action.key),
+    ['up', 'down', 'left', 'right'],
+  );
+  lan.calls.length = 0;
+  for (const key of ['up', 'down', 'left', 'right']) {
+    await widgets.action('navigation', key, { serial: LAN.tv.serial });
+  }
+  assert.deepEqual(
+    lan.calls.filter((call) => call.op === 'keypress').map((call) => call.arg),
+    ['Up', 'Down', 'Left', 'Right'],
+  );
 });
