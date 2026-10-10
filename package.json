@@ -1,6 +1,6 @@
 {
   "name": "gladys-roku",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Gladys Assistant integration for Roku players and Roku TVs, over the local Roku External Control Protocol (ECP).",
   "type": "module",

@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-10-10
+
 ### Added
 
 - Roku navigation widget: the four arrows, to place next to the Roku remote.
@@ -62,6 +64,7 @@ the notes of the version's GitHub Release.
   mobile apps" set to Limited or Disabled), with the setting to change.
 - Optional debug logs of every request sent to the Rokus.
 
-[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/guim31/gladys-roku/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/guim31/gladys-roku/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/guim31/gladys-roku/releases/tag/v1.0.1
