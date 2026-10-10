@@ -116,3 +116,20 @@ test('addresses are validated before any request', () => {
   assert.equal(isValidHost(''), false);
   assert.throws(() => new RokuClient('evil host'), RokuError);
 });
+
+test('a typed character is URL-encoded, and hidden from the errors', async () => {
+  const { fetch, calls } = fakeFetch(() => response(200));
+  const client = new RokuClient('192.0.2.30', { fetch });
+  await client.keypress('Lit_@');
+  await client.keypress('Lit_ ');
+  assert.deepEqual(
+    calls.map((call) => call.url),
+    ['http://192.0.2.30:8060/keypress/Lit_%40', 'http://192.0.2.30:8060/keypress/Lit_%20'],
+  );
+  const refusing = new RokuClient('192.0.2.30', { fetch: async () => response(403) });
+  await assert.rejects(refusing.keypress('Lit_s'), (err) => {
+    assert.equal(err.path, '/keypress/Lit_*');
+    assert.ok(!err.message.includes('Lit_s'));
+    return true;
+  });
+});

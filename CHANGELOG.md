@@ -10,6 +10,12 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Added
+
+- Roku navigation widget: the four arrows, to place next to the Roku remote.
+- "Type a text on a Roku" scene action, for a search or a login: start it from
+  a Scene box of the dashboard. The typed text never goes to the logs.
+
 ### Fixed
 
 - The buttons of the dashboard widgets (Play/Pause, Replay… of Roku playback)
@@ -24,9 +30,10 @@ the notes of the version's GitHub Release.
 ### Changed
 
 - Roku remote: Power (Roku TV) or Play/Pause (player), Home, Back and OK. The
-  "Keys…" button is removed: Gladys 5.1.4 does not send the key picked in its
-  form. Every key stays on the device page and in the "Press a Roku remote key"
-  scene action.
+  "Keys…" button is removed: its form needs a Gladys version not released yet
+  (5.1.4 shows the button but sends nothing). The arrows are in the new Roku
+  navigation widget, every key on the device page and in the "Press a Roku
+  remote key" scene action.
 - Roku apps: the settings and the documentation say it plainly, four apps at
   most per widget, named in the settings (add a second widget for more); every
   app is in the Application feature of the device.

@@ -263,7 +263,28 @@ test('widget signatures ignore the playback position', async () => {
   assert.deepEqual(widgetSignatures(manager), before);
   roku.state.app = { id: '13', name: 'Amazon Video on Demand', home: false };
   const after = widgetSignatures(manager);
-  for (const key of WIDGET_KEYS) {
+  for (const key of ['remote', 'media', 'apps']) {
     assert.notEqual(after[key], before[key], `${key} shows the app`);
   }
+  // The arrows show no app: no reload for them.
+  assert.equal(after.navigation, before.navigation);
+});
+
+test('navigation: the four arrows, sent as the Up/Down/Left/Right keys', async () => {
+  const { lan, widgets } = await setup();
+  const content = await widgets.get('navigation', {
+    settings: { device: deviceOf(LAN.tv.serial) },
+  });
+  assert.deepEqual(
+    content.components.filter((c) => c.type === 'button').map((c) => c.action.key),
+    ['up', 'down', 'left', 'right'],
+  );
+  lan.calls.length = 0;
+  for (const key of ['up', 'down', 'left', 'right']) {
+    await widgets.action('navigation', key, { serial: LAN.tv.serial });
+  }
+  assert.deepEqual(
+    lan.calls.filter((call) => call.op === 'keypress').map((call) => call.arg),
+    ['Up', 'Down', 'Left', 'Right'],
+  );
 });

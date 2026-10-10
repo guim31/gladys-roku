@@ -93,20 +93,22 @@ arrive à l'écran.
 - **Les touches volume et marche d'un lecteur** (celles de la télécommande
   vocale qui pilotent votre TV en HDMI-CEC ou infrarouge) ne passent pas par
   le réseau.
-- **La saisie de texte** (champs de recherche) n'est pas encore prise en
-  charge.
+- **La saisie de texte** passe seulement par une scène (voir
+  [Taper un texte](#taper-un-texte-recherche-identifiant)) : aucun champ du
+  tableau de bord ne sait encore envoyer du texte à une intégration.
 
 ## Tableau de bord
 
-Trois widgets sont fournis (Gladys 5.1 ou plus récent). Chacun montre le Roku
+Quatre widgets sont fournis (Gladys 5.1 ou plus récent). Chacun montre le Roku
 choisi dans ses réglages, ou le premier.
 
 - **Télécommande Roku** — alimentation et application à l'écran, puis
   **Allumer/Éteindre** (Roku TV) ou **Lecture/Pause** (lecteur),
   **Accueil**, **Retour** et **OK**. Un widget a quatre boutons au plus :
-  les autres touches (flèches, volume, sourdine…) sont sur la page de
-  l'appareil et dans l'action de scène « Appuyer sur une touche de
-  télécommande Roku ».
+  placez à côté le widget **Navigation Roku** pour les flèches ; les autres
+  touches (volume, sourdine…) sont sur la page de l'appareil et dans l'action
+  de scène « Appuyer sur une touche de télécommande Roku ».
+- **Navigation Roku** — les quatre flèches : Haut, Bas, Gauche, Droite.
 - **Lecture Roku** — l'icône et le nom de l'application à l'écran, en lecture
   ou en pause, la position dans la vidéo quand une vidéo est ouverte, et
   Lecture/Pause, Retour rapide, Avance rapide, Relecture.
@@ -145,9 +147,27 @@ catégorie **Intégrations** :
   touche, autant de fois que nécessaire, y compris Allumer et Éteindre pour une
   Roku TV. Exemple : _quand on sonne, appuyer sur Lecture/Pause_.
 
+- **Taper un texte sur un Roku** (action) — tape un texte dans le champ
+  affiché sur le Roku, voir ci-dessous.
+
 Les états d'alimentation et de lecture sont des fonctionnalités classiques :
 une scène peut démarrer quand la TV s'éteint, ou vérifier qu'une lecture est
 en cours.
+
+### Taper un texte (recherche, identifiant)
+
+Le tableau de bord de Gladys n'a pas encore de champ de texte qu'une
+intégration puisse recevoir. L'astuce :
+
+1. Sur le Roku, ouvrez le champ (une recherche, l'e-mail d'un identifiant…).
+2. Dans Gladys, créez une scène avec l'action **Taper un texte sur un Roku**
+   et le texte à taper (100 caractères au plus).
+3. Ajoutez une boîte **Scène** au tableau de bord avec cette scène : un appui
+   tape le texte.
+
+Ne mettez **pas** de mot de passe sensible dans une scène : tous les
+utilisateurs de Gladys peuvent lire les scènes. L'intégration n'écrit jamais le
+texte tapé dans ses journaux.
 
 ## Dépannage
 

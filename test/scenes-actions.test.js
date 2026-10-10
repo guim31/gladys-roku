@@ -129,3 +129,21 @@ test('test_connection without fields tests every known Roku', async () => {
   });
   assert.match(nothing.en, /No Roku known yet/);
 });
+
+test('type_text types one Lit_ key per character, and never logs the text', async () => {
+  const { lan, actions } = await setup();
+  lan.calls.length = 0;
+  await actions.type_text({ device: deviceOf(LAN.box.serial), text: 'Kiké 2@x' });
+  assert.deepEqual(
+    lan.calls.map((call) => call.arg),
+    ['Lit_K', 'Lit_i', 'Lit_k', 'Lit_é', 'Lit_ ', 'Lit_2', 'Lit_@', 'Lit_x'],
+  );
+  await assert.rejects(
+    actions.type_text({ device: deviceOf(LAN.box.serial), text: '' }),
+    /No text/,
+  );
+  await assert.rejects(
+    actions.type_text({ device: deviceOf(LAN.box.serial), text: 'x'.repeat(101) }),
+    /100 at most/,
+  );
+});

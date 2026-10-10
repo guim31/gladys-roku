@@ -208,10 +208,15 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Le validateur du store limite aussi la `description` des widgets à 100
   caractères** par langue (et le `label` à 3-30) : `test/manifest.test.js` le
   vérifie.
-- **Pas de formulaire derrière un bouton de widget** (`action.fields`) : le cœur
-  5.1.4 ne les connaît pas (il relaie l'appui sans `values`), et le SDK 0.14.0
-  ne transmet de toute façon pas `values` au handler. Le spec et le cœur `master`
-  les décrivent : vérifier la version publiée avant de s'en servir.
+- **Cibler la dernière version publiée du cœur**, pas `master` : la spec de
+  `master` décrit des fonctions non publiées. Vérifier qu'un commit est publié
+  par `git tag --contains <commit>` dans le dépôt Gladys. Exemple payé : les
+  formulaires derrière un bouton de widget (`action.fields`, Gladys#3168)
+  n'existent dans aucune version publiée ; sur 5.1.4 le bouton s'affiche et
+  n'envoie rien, et le SDK 0.14.0 ne transmet de toute façon pas `values`.
+- **Pas de saisie de texte depuis le tableau de bord** : passer par une action
+  de scène à champ `string` (`type_text`), lancée depuis une boîte Scène. Ne
+  jamais journaliser le texte tapé (`/keypress/Lit_*` est masqué).
 - **Budget de rechargement des widgets** (cœur 5.1.4) : **30 « pulls » de
   contenu par minute et par intégration**, fenêtre fixe, **tentatives refusées
   comprises**. Au-delà : 429, la boîte garde son ancien contenu, et **un appui

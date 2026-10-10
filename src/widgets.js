@@ -6,6 +6,9 @@
 //              buttons at most; every other key is a feature of the device);
 //   - media  : the foreground app, its icon, the playback state and position,
 //              then play/pause, rewind, fast forward, instant replay;
+//   - navigation: the four arrows, to place next to the remote (OK, Back and
+//              Home are there: a widget holds 4 buttons, a form behind a
+//              button is not in any released Gladys yet);
 //   - apps   : up to four app shortcuts (named in the widget settings, the
 //              first installed apps otherwise), shown with their icons in a
 //              grid, the foreground one marked.
@@ -37,6 +40,7 @@ export const WIDGET = {
   REMOTE: 'remote',
   MEDIA: 'media',
   APPS: 'apps',
+  NAVIGATION: 'navigation',
 };
 
 /** The settings naming the apps of the apps widget (forever). */
@@ -45,7 +49,13 @@ export const APP_SETTINGS = ['app_1', 'app_2', 'app_3', 'app_4'];
 // Content freshness, in seconds. The nudges follow the changes: the TTL only
 // catches up with a missed one, and with the playback position, which drifts
 // without being a change.
-export const WIDGET_TTL_SECONDS = { remote: 600, media: 120, apps: 900, empty: 300 };
+export const WIDGET_TTL_SECONDS = {
+  remote: 600,
+  media: 120,
+  apps: 900,
+  navigation: 3600,
+  empty: 300,
+};
 
 const CURRENT_ICON = 'check-circle';
 
@@ -85,6 +95,10 @@ const T = {
   turnOff: { en: 'Turn off', fr: 'Éteindre' },
   back: { en: 'Back', fr: 'Retour' },
   ok: { en: 'OK', fr: 'OK' },
+  up: { en: 'Up', fr: 'Haut' },
+  down: { en: 'Down', fr: 'Bas' },
+  left: { en: 'Left', fr: 'Gauche' },
+  right: { en: 'Right', fr: 'Droite' },
   playPause: { en: 'Play / Pause', fr: 'Lecture / Pause' },
   rewind: { en: 'Rewind', fr: 'Retour rapide' },
   forward: { en: 'Fast forward', fr: 'Avance rapide' },
@@ -104,6 +118,10 @@ const KEY_BUTTONS = {
   rewind: 'Rev',
   forward: 'Fwd',
   replay: 'InstantReplay',
+  up: 'Up',
+  down: 'Down',
+  left: 'Left',
+  right: 'Right',
 };
 
 /**
@@ -254,6 +272,28 @@ export function remoteContent(roku) {
       ...refusedCaption(roku),
       { type: 'status', items: [powerStatus(roku), ...appRows(roku)] },
       ...buttons,
+    ],
+  };
+}
+
+/**
+ * The "navigation" widget: the arrows of the remote, nothing else to read.
+ *
+ * @param {Object} roku The Roku.
+ * @returns {Object} Content.
+ */
+export function navigationContent(roku) {
+  const params = { serial: roku.serial };
+  return {
+    version: 1,
+    ttl_seconds: WIDGET_TTL_SECONDS.navigation,
+    components: [
+      heading(roku),
+      ...refusedCaption(roku),
+      button(T.up, 'up', params, 'chevron-up'),
+      button(T.down, 'down', params, 'chevron-down'),
+      button(T.left, 'left', params, 'chevron-left'),
+      button(T.right, 'right', params, 'chevron-right'),
     ],
   };
 }
@@ -503,6 +543,9 @@ export function createWidgetHandlers(manager) {
       if (key === WIDGET.APPS) {
         return appsContent(roku, settings, language, (r, name) => manager.findApp(r, name));
       }
+      if (key === WIDGET.NAVIGATION) {
+        return navigationContent(roku);
+      }
       throw new Error(`Unknown widget: ${key}`);
     },
 
@@ -584,6 +627,10 @@ export function widgetSignatures(manager) {
     ),
     [WIDGET.APPS]: JSON.stringify(
       rokus.map((roku) => [...base(roku), (roku.apps ?? []).map((app) => app.id).join(',')]),
+    ),
+    // The arrows show only the name of the Roku and a refusal.
+    [WIDGET.NAVIGATION]: JSON.stringify(
+      rokus.map((roku) => [roku.serial, roku.info.name, roku.error?.kind === 'forbidden']),
     ),
   };
 }

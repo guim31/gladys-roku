@@ -9,7 +9,10 @@
 //
 // Actions:
 //   - launch_app: open an app by name (or id) — "movie night";
-//   - send_key: press a remote key, a number of times — "mute the TV".
+//   - send_key: press a remote key, a number of times — "mute the TV";
+//   - type_text: type a text in the field on screen (search, login), the only
+//     text entry a widget can reach on a Gladys without widget forms: a scene
+//     holding the text, started from a scene button of the dashboard.
 // Keys are forever once published.
 // -----------------------------------------------------------------------------
 
@@ -90,8 +93,14 @@ export function createSceneActions(manager) {
       await manager.pressKey(roku.serial, remoteKey.ecp, times);
       return undefined;
     },
+
+    async type_text(fields) {
+      const roku = requireRoku(manager, fields.device);
+      await manager.typeText(roku.serial, fields.text);
+      return undefined;
+    },
   };
 }
 
 /** Scene action keys (forever), for the manifest consistency test. */
-export const SCENE_ACTION_KEYS = ['launch_app', 'send_key'];
+export const SCENE_ACTION_KEYS = ['launch_app', 'send_key', 'type_text'];

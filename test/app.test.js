@@ -28,7 +28,7 @@ test('connection: SSDP + typed addresses published to the Discovery tab, status 
   await gladys.handlers.on.connected();
   assert.equal(gladys.discovered.length, 3);
   assert.deepEqual(gladys.connectionStatuses.at(-1), { connected: true, message: undefined });
-  assert.deepEqual(gladys.widgetRefreshes.sort(), ['apps', 'media', 'remote']);
+  assert.deepEqual(gladys.widgetRefreshes.sort(), ['apps', 'media', 'navigation', 'remote']);
   app.shutdown();
 });
 
