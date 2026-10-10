@@ -5,7 +5,9 @@
 //              Play/Pause (player), Home, Back and OK (a widget holds 4
 //              buttons at most; every other key is a feature of the device);
 //   - media  : the foreground app, its icon, the playback state and position,
-//              then play/pause, rewind, fast forward, instant replay;
+//              then play/pause, rewind, fast forward (Instant replay
+//              depends on the app and confused a tester: it stays a key of
+//              the device and of the send_key scene action);
 //   - navigation: the four arrows, to place next to the remote (OK, Back and
 //              Home are there: a widget holds 4 buttons, a form behind a
 //              button is not in any released Gladys yet);
@@ -102,7 +104,6 @@ const T = {
   playPause: { en: 'Play / Pause', fr: 'Lecture / Pause' },
   rewind: { en: 'Rewind', fr: 'Retour rapide' },
   forward: { en: 'Fast forward', fr: 'Avance rapide' },
-  replay: { en: 'Replay', fr: 'Relecture' },
   unknownApps: {
     en: (unknown) => `Not installed: ${unknown}`,
     fr: (unknown) => `Non installées : ${unknown}`,
@@ -117,6 +118,8 @@ const KEY_BUTTONS = {
   play_pause: 'Play',
   rewind: 'Rev',
   forward: 'Fwd',
+  // No button since 1.0.4: kept so a tap on a content cached before the
+  // update still works.
   replay: 'InstantReplay',
   up: 'Up',
   down: 'Down',
@@ -379,7 +382,6 @@ export function mediaContent(roku) {
     button(T.playPause, 'play_pause', params, roku.state?.playing ? 'pause' : 'play'),
     button(T.rewind, 'rewind', params, 'rewind'),
     button(T.forward, 'forward', params, 'fast-forward'),
-    button(T.replay, 'replay', params, 'rotate-ccw'),
   );
   return { version: 1, ttl_seconds: WIDGET_TTL_SECONDS.media, components };
 }
@@ -497,6 +499,18 @@ export function widgetCommand(actionKey, params = {}) {
 export const SETTLE_AFTER_ACTION_MS = 1000;
 
 /**
+ * Whether a widget command changes what the widgets show: the power, the app
+ * or the playback state. Arrows, OK, Back and Home do not (Home changes the
+ * app, the next poll shows it).
+ *
+ * @param {Object} command See widgetCommand().
+ * @returns {boolean} True for power, app and play/pause.
+ */
+export function changesWhatIsShown(command) {
+  return command.kind !== 'key' || command.ecp === 'Play';
+}
+
+/**
  * Run a widget command.
  *
  * @param {Object} manager RokuManager.
@@ -557,10 +571,14 @@ export function createWidgetHandlers(manager) {
       const roku = manager.require(command.serial);
       try {
         const toast = await runCommand(manager, command, roku);
-        // Read the Roku again before answering: the core reloads this widget
-        // as soon as the action resolves, it then shows the new state.
-        await manager.sleep(SETTLE_AFTER_ACTION_MS);
-        await manager.refresh(command.serial).catch(() => {});
+        // After a command that changes what the widgets show (power, app,
+        // play/pause), read the Roku again before answering: the core
+        // reloads this widget as soon as the action resolves, it then shows
+        // the new state. A navigation key changes nothing shown: no wait.
+        if (changesWhatIsShown(command)) {
+          await manager.sleep(SETTLE_AFTER_ACTION_MS);
+          await manager.refresh(command.serial).catch(() => {});
+        }
         return toast;
       } catch (err) {
         if (err?.kind) {

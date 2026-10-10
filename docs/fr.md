@@ -104,14 +104,23 @@ choisi dans ses réglages, ou le premier.
 
 - **Télécommande Roku** — alimentation et application à l'écran, puis
   **Allumer/Éteindre** (Roku TV) ou **Lecture/Pause** (lecteur),
-  **Accueil**, **Retour** et **OK**. Un widget a quatre boutons au plus :
-  placez à côté le widget **Navigation Roku** pour les flèches ; les autres
-  touches (volume, sourdine…) sont sur la page de l'appareil et dans l'action
-  de scène « Appuyer sur une touche de télécommande Roku ».
+  **Accueil**, **Retour** et **OK**.
 - **Navigation Roku** — les quatre flèches : Haut, Bas, Gauche, Droite.
 - **Lecture Roku** — l'icône et le nom de l'application à l'écran, en lecture
   ou en pause, la position dans la vidéo quand une vidéo est ouverte, et
-  Lecture/Pause, Retour rapide, Avance rapide, Relecture.
+  Lecture/Pause, Retour rapide, Avance rapide.
+
+Gladys limite un widget à **quatre boutons** : placez **Télécommande Roku** et
+**Navigation Roku** l'un sous l'autre pour avoir une télécommande complète. Les
+autres touches (volume, sourdine, Relecture instantanée…) sont sur la page de
+l'appareil et dans l'action de scène « Appuyer sur une touche de télécommande
+Roku ».
+
+Dans les menus des applications (un profil, un film, un réglage), c'est **OK**
+qui valide. **Lecture/Pause** n'agit que pendant une vidéo, et selon
+l'application : dans Arte par exemple, Lecture ne lance pas le film choisi, OK
+oui.
+
 - **Applications Roku** — **quatre raccourcis au plus** par widget, avec
   leurs icônes (une limite du tableau de bord de Gladys). Réglages vides : les
   quatre premières applications installées ; **saisissez les noms voulus**

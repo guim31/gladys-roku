@@ -37,11 +37,11 @@ src/manager.js                    the Rokus: discovery (SSDP + typed addresses),
 src/ecp/client.js                 ECP over HTTP (port 8060), errors with a `kind` (forbidden, refused…)
 src/ecp/parse.js, src/ecp/xml.js  readers of the ECP answers and SSDP replies, minimal XML parser
 src/devices/roku.js               the Gladys device of a Roku: features, remote keys, states
-src/widgets.js                    dashboard widgets (remote, media, apps) and app icons
+src/widgets.js                    dashboard widgets (remote, navigation, media, apps), app icons
 src/scenes.js                     scene trigger data and scene action handlers
 src/actions.js                    manifest action handlers (test_connection)
 src/messages.js                   bilingual explanations of the errors
-src/nudger.js                     widget refresh nudges at the core's pace (1 / 10 s / widget)
+src/nudger.js                     widget refresh nudges, 1 / 30 s / widget, only on a change
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
 docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)

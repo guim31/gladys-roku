@@ -81,11 +81,12 @@ export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
   let signatures = {};
   // Widgets whose button is being handled: the core reloads them itself once
   // the action resolves, a nudge would cost a second pull.
-  const acting = new Set();
+  // A count per widget key: two taps on the same widget can overlap.
+  const acting = new Map();
   function nudgeChangedWidgets() {
     const next = widgetSignatures(manager);
     for (const key of WIDGET_KEYS) {
-      if (next[key] !== signatures[key] && !acting.has(key)) {
+      if (next[key] !== signatures[key] && !acting.get(key)) {
         nudger.nudge(key);
       }
     }
@@ -149,11 +150,11 @@ export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
   for (const key of WIDGET_KEYS) {
     gladys.onWidgetGet(key, (request) => widgets.get(key, request));
     gladys.onWidgetAction(key, async (actionKey, params, extra) => {
-      acting.add(key);
+      acting.set(key, (acting.get(key) ?? 0) + 1);
       try {
         return await widgets.action(key, actionKey, params, extra);
       } finally {
-        acting.delete(key);
+        acting.set(key, acting.get(key) - 1);
       }
     });
   }

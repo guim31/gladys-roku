@@ -10,6 +10,16 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Changed
+
+- Roku playback: no more Replay button (Instant replay depends on the app and
+  confused a tester). The key stays on the device page and in the "Press a
+  Roku remote key" scene action.
+- The navigation keys of the widgets (arrows, OK, Back, Home) answer at once;
+  only power, app and play/pause wait to show the new state.
+- Documentation: OK selects in the menus of the apps, Play/Pause only acts
+  during a video; place Roku remote and Roku navigation one under the other.
+
 ## [1.0.3] - 2026-10-10
 
 ### Added
