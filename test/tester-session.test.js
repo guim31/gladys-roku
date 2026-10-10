@@ -53,7 +53,7 @@ async function testerSession() {
   }
   lan.calls.length = 0;
   const playback = [];
-  for (const actionKey of ['play_pause', 'replay', 'rewind', 'forward']) {
+  for (const actionKey of ['play_pause', 'rewind', 'forward']) {
     playback.push(await core.tap('media', actionKey));
     await time.advance(2000);
   }
@@ -70,7 +70,7 @@ test('after a minute of use, every playback button of the media widget reaches t
   );
   assert.deepEqual(
     lan.calls.filter((call) => call.op === 'keypress').map((call) => call.arg),
-    ['Play', 'InstantReplay', 'Rev', 'Fwd'],
+    ['Play', 'Rev', 'Fwd'],
   );
   for (const result of playback) {
     assert.deepEqual(result.message, {

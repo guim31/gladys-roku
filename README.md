@@ -27,10 +27,14 @@ Roku documents for its devices (HTTP on port 8060). No Roku account, no cloud.
   - remote keys as push buttons: Home, Back, arrows, OK, Options (\*),
     Play/Pause, Rewind, Fast forward, Instant replay; Volume up/down and Mute
     on a Roku TV; Channel up/down on a Roku TV with a tuner.
-- **Dashboard widgets** (Gladys 5.1+): a remote, a "now playing" card with the
-  app icon and position, and app shortcuts with their icons.
-- **Scenes** (Gladys 5.1+): an "app changed" trigger, "open an app" and "press
-  a key" actions.
+- **Dashboard widgets** (Gladys 5.1+): a remote (power or play/pause, Home,
+  Back, OK), the navigation arrows, a "now playing" card with the app icon and
+  position, and app shortcuts with their icons. Gladys allows four buttons per
+  widget: the remote and the arrows are two widgets, one under the other.
+- **Scenes** (Gladys 5.1+): an "app changed" trigger, "open an app", "press a
+  key" and "type a text" actions. Typing a text (a search, a login) goes
+  through a scene started from a Scene box: the dashboard of the released
+  Gladys has no text field for integrations.
 - **Diagnostics**: a Roku set to "Control by mobile apps: Limited" (the default
   of recent Roku OS versions) answers HTTP 403; the integration says so, and
   what to change, in the Configuration screen, the widgets and the
@@ -83,7 +87,7 @@ src/app.js             every SDK handler, wired to the manager
 src/manager.js         the Rokus: discovery, polling, state publication, commands
 src/ecp/               ECP client, XML reader, answer parsers (+ SSDP replies)
 src/devices/roku.js    the Gladys device of a Roku: features, keys, states
-src/widgets.js         dashboard widgets (remote, media, apps) and app icons
+src/widgets.js         dashboard widgets (remote, navigation, media, apps), app icons
 src/scenes.js          scene trigger data and scene actions
 src/actions.js         the "Test the connection" action
 test/fixtures/ecp/     real ECP answers (anonymized), see Credits

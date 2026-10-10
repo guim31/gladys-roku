@@ -14,6 +14,7 @@ import {
   iconKey,
   widgetCommand,
   widgetSignatures,
+  changesWhatIsShown,
 } from '../src/widgets.js';
 import { createFakeGladys } from './helpers/fakeGladys.js';
 import { LAN, createReferenceLan } from './helpers/fakeRoku.js';
@@ -196,9 +197,10 @@ test('widget actions run the command and answer a toast', async () => {
   await widgets.action('media', 'replay', tv);
   const toast = await widgets.action('apps', 'app_1', { serial: LAN.box.serial, app: '12' });
   assert.equal(toast.en, 'Opening Netflix…');
-  // Each command is followed by a read of the Roku, before the toast: the
-  // core reloads the widget as soon as the action resolves.
-  assert.deepEqual(lan.calls.map((call) => call.op).filter((op) => op === 'deviceInfo').length, 3);
+  // Power and app are followed by a read of the Roku, before the toast (the
+  // core reloads the widget as soon as the action resolves); a key that
+  // changes nothing shown (here the cached Replay) is not.
+  assert.deepEqual(lan.calls.map((call) => call.op).filter((op) => op === 'deviceInfo').length, 2);
   assert.deepEqual(
     lan.calls
       .filter((call) => call.op === 'keypress' || call.op === 'launch')
@@ -287,4 +289,29 @@ test('navigation: the four arrows, sent as the Up/Down/Left/Right keys', async (
     lan.calls.filter((call) => call.op === 'keypress').map((call) => call.arg),
     ['Up', 'Down', 'Left', 'Right'],
   );
+});
+
+test('media: Play/Pause, Rewind, Fast forward; Replay stays a key of the device only', async () => {
+  const { widgets } = await setup();
+  const content = await widgets.get('media', { settings: { device: deviceOf(LAN.box.serial) } });
+  assert.deepEqual(
+    content.components.filter((c) => c.type === 'button').map((c) => c.action.key),
+    ['play_pause', 'rewind', 'forward'],
+  );
+  // A tap on a content cached before the update still sends the key.
+  assert.deepEqual(widgetCommand('replay', { serial: 'S1' }), {
+    kind: 'key',
+    serial: 'S1',
+    ecp: 'InstantReplay',
+    times: 1,
+  });
+});
+
+test('only power, app and play/pause wait for the new state of the Roku', () => {
+  assert.equal(changesWhatIsShown({ kind: 'power' }), true);
+  assert.equal(changesWhatIsShown({ kind: 'app' }), true);
+  assert.equal(changesWhatIsShown({ kind: 'key', ecp: 'Play' }), true);
+  for (const ecp of ['Up', 'Down', 'Left', 'Right', 'Select', 'Back', 'Home', 'Rev', 'Fwd']) {
+    assert.equal(changesWhatIsShown({ kind: 'key', ecp }), false, ecp);
+  }
 });

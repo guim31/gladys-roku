@@ -93,14 +93,21 @@ Four widgets come with the integration (Gladys 5.1 or later). Each one shows
 the Roku picked in its settings, or the first one.
 
 - **Roku remote** — power and app on screen, then **Power** (Roku TV) or
-  **Play/Pause** (player), **Home**, **Back** and **OK**. A widget holds four
-  buttons at most: put the **Roku navigation** widget next to it for the
-  arrows; every other key (volume, mute…) is on the device page and in the
-  "Press a Roku remote key" scene action.
+  **Play/Pause** (player), **Home**, **Back** and **OK**.
 - **Roku navigation** — the four arrows: Up, Down, Left, Right.
 - **Roku playback** — the icon and name of the app on screen, playing or
   paused, the position in the video while one is open, and Play/Pause,
-  Rewind, Fast forward, Instant replay.
+  Rewind, Fast forward.
+
+Gladys limits a widget to **four buttons**: place **Roku remote** and **Roku
+navigation** one under the other to get a full remote. Every other key
+(volume, mute, Instant replay…) is on the device page and in the "Press a Roku
+remote key" scene action.
+
+In the menus of the apps (a profile, a film, a setting), **OK** selects.
+**Play/Pause** only acts while a video plays, and how depends on the app: in
+Arte, for instance, Play does not start the film you picked, OK does.
+
 - **Roku apps** — **four app shortcuts at most** per widget, with their icons
   (a limit of the Gladys dashboard). Left empty, the settings show the first
   four apps installed; **type the names you want** in the widget settings
