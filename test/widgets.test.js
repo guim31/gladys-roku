@@ -60,7 +60,7 @@ test('every widget fits the core budget, for every reference Roku and language',
   const { widgets } = await setup();
   for (const roku of Object.values(LAN)) {
     for (const key of WIDGET_KEYS) {
-      for (const language of ['en', 'fr']) {
+      for (const language of ['en', 'fr', 'de', 'es']) {
         const content = await widgets.get(key, {
           settings: { device: deviceOf(roku.serial) },
           language,
@@ -83,7 +83,10 @@ test('remote: Power on a Roku TV, Play/Pause on a player, then Home, Back, OK', 
   // No form behind a button: Gladys 5.1.4 and SDK 0.14.0 relay no typed value.
   assert.ok(box.components.every((c) => !c.action?.fields));
   const status = box.components.find((c) => c.type === 'status');
-  assert.deepEqual(status.items[1], { label: { en: 'App', fr: 'Application' }, value: 'Netflix' });
+  assert.deepEqual(status.items[1], {
+    label: { en: 'App', fr: 'Application', de: 'App', es: 'Aplicación' },
+    value: 'Netflix',
+  });
 });
 
 test('media: the app icon, the playback state and position', async () => {
@@ -193,10 +196,13 @@ test('widget actions run the command and answer a toast', async () => {
   assert.deepEqual(await widgets.action('remote', 'power', tv), {
     en: 'Turning the TV off…',
     fr: 'Extinction de la TV…',
+    de: 'Fernseher wird ausgeschaltet…',
+    es: 'Apagando la TV…',
   });
   await widgets.action('media', 'replay', tv);
   const toast = await widgets.action('apps', 'app_1', { serial: LAN.box.serial, app: '12' });
   assert.equal(toast.en, 'Opening Netflix…');
+  assert.equal(toast.de, 'Netflix wird geöffnet…');
   // Power and app are followed by a read of the Roku, before the toast (the
   // core reloads the widget as soon as the action resolves); a key that
   // changes nothing shown (here the cached Replay) is not.
@@ -215,7 +221,8 @@ test('widget actions run the command and answer a toast', async () => {
   lan.roku(LAN.tv.ip).failKeys = 'forbidden';
   const refused = await widgets.action('remote', 'home', tv);
   assert.match(refused.en, /Network access/);
-  assert.ok(refused.en.length <= 200 && refused.fr.length <= 200);
+  assert.ok(Object.values(refused).every((text) => text.length <= 200));
+  assert.deepEqual(Object.keys(refused), ['en', 'fr', 'de', 'es']);
 
   await assert.rejects(widgets.action('remote', 'keys', tv), /Unknown widget action/);
   await assert.rejects(widgets.action('remote', 'nope', tv), /Unknown widget action/);

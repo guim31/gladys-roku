@@ -4,7 +4,9 @@
   "name": "Roku",
   "description": {
     "en": "Control your Roku players and Roku TVs locally: power, apps, playback, remote keys, inputs.",
-    "fr": "Pilotez vos lecteurs Roku et Roku TV en local : marche, applications, lecture, touches, entrées."
+    "fr": "Pilotez vos lecteurs Roku et Roku TV en local : marche, applications, lecture, touches, entrées.",
+    "de": "Steuere deine Roku-Player und Roku TVs lokal: Ein/Aus, Apps, Wiedergabe, Tasten, Eingänge.",
+    "es": "Controle sus reproductores Roku y Roku TV en local: encendido, apps, reproducción, teclas, entradas."
   },
   "version": "1.0.4",
   "docker_image": "ghcr.io/guim31/gladys-roku:1.0.4",
@@ -18,17 +20,26 @@
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Before you start", "fr": "Avant de commencer" },
+      "label": {
+        "en": "Before you start",
+        "fr": "Avant de commencer",
+        "de": "Bevor du beginnst",
+        "es": "Antes de empezar"
+      },
       "description": {
         "en": "On each Roku, open Settings > System > Advanced system settings > Control by mobile apps > Network access and choose \"Enabled\": recent Roku OS versions set it to \"Limited\", which blocks Gladys. Then run a device scan (Discovery tab): Rokus on the same network are found automatically. Type an address below only for a Roku the scan misses.",
-        "fr": "Sur chaque Roku, ouvrez Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès réseau (Settings > System > Advanced system settings > Control by mobile apps > Network access) et choisissez « Activé » (Enabled) : les versions récentes de Roku OS le règlent sur « Limité » (Limited), ce qui bloque Gladys. Lancez ensuite une recherche d'appareils (onglet Découverte) : les Roku du même réseau sont trouvés automatiquement. Ne saisissez une adresse ci-dessous que pour un Roku que la recherche ne trouve pas."
+        "fr": "Sur chaque Roku, ouvrez Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès réseau (Settings > System > Advanced system settings > Control by mobile apps > Network access) et choisissez « Activé » (Enabled) : les versions récentes de Roku OS le règlent sur « Limité » (Limited), ce qui bloque Gladys. Lancez ensuite une recherche d'appareils (onglet Découverte) : les Roku du même réseau sont trouvés automatiquement. Ne saisissez une adresse ci-dessous que pour un Roku que la recherche ne trouve pas.",
+        "de": "Öffne auf jedem Roku Einstellungen > System > Erweiterte Systemeinstellungen > Steuerung durch mobile Apps > Netzwerkzugriff (Settings > System > Advanced system settings > Control by mobile apps > Network access) und wähle „Aktiviert“ (Enabled): Neuere Versionen von Roku OS stellen „Eingeschränkt“ (Limited) ein, was Gladys blockiert. Starte dann eine Gerätesuche (Tab „Entdecken“): Rokus im selben Netzwerk werden automatisch gefunden. Gib unten nur für einen Roku eine Adresse ein, den die Suche nicht findet.",
+        "es": "En cada Roku, abra Configuración > Sistema > Configuración avanzada del sistema > Control por aplicaciones móviles > Acceso a la red (Settings > System > Advanced system settings > Control by mobile apps > Network access) y elija \"Habilitado\" (Enabled): las versiones recientes de Roku OS lo ponen en \"Limitado\" (Limited), lo que bloquea a Gladys. Después, inicie una búsqueda de dispositivos (pestaña Descubrir): los Roku de la misma red se encuentran automáticamente. Escriba una dirección abajo solo para un Roku que la búsqueda no encuentre."
       },
       "links": [
         {
           "url": "https://developer.roku.com/docs/developer-program/dev-tools/external-control-api.md",
           "label": {
             "en": "Roku External Control Protocol (ECP)",
-            "fr": "Protocole de contrôle externe de Roku (ECP)"
+            "fr": "Protocole de contrôle externe de Roku (ECP)",
+            "de": "Externes Steuerprotokoll von Roku (ECP)",
+            "es": "Protocolo de control externo de Roku (ECP)"
           }
         }
       ]
@@ -36,14 +47,23 @@
     {
       "key": "hosts",
       "type": "string",
-      "label": { "en": "Roku addresses (optional)", "fr": "Adresses des Roku (facultatif)" },
+      "label": {
+        "en": "Roku addresses (optional)",
+        "fr": "Adresses des Roku (facultatif)",
+        "de": "Roku-Adressen (optional)",
+        "es": "Direcciones de los Roku (opcional)"
+      },
       "description": {
         "en": "IP addresses of Rokus the device scan does not find, separated by commas. Give them a fixed address in your router (DHCP reservation).",
-        "fr": "Adresses IP des Roku que la recherche d'appareils ne trouve pas, séparées par des virgules. Donnez-leur une adresse fixe dans votre box (réservation DHCP)."
+        "fr": "Adresses IP des Roku que la recherche d'appareils ne trouve pas, séparées par des virgules. Donnez-leur une adresse fixe dans votre box (réservation DHCP).",
+        "de": "IP-Adressen der Rokus, die die Gerätesuche nicht findet, durch Kommas getrennt. Gib ihnen eine feste Adresse in deinem Router (DHCP-Reservierung).",
+        "es": "Direcciones IP de los Roku que la búsqueda de dispositivos no encuentra, separadas por comas. Asígneles una dirección fija en su router (reserva DHCP)."
       },
       "placeholder": {
         "en": "e.g. 192.168.1.40, 192.168.1.41",
-        "fr": "ex. 192.168.1.40, 192.168.1.41"
+        "fr": "ex. 192.168.1.40, 192.168.1.41",
+        "de": "z. B. 192.168.1.40, 192.168.1.41",
+        "es": "p. ej. 192.168.1.40, 192.168.1.41"
       },
       "required": false,
       "default": ""
@@ -51,10 +71,17 @@
     {
       "key": "debug_logs",
       "type": "boolean",
-      "label": { "en": "Debug logs", "fr": "Journaux de débogage" },
+      "label": {
+        "en": "Debug logs",
+        "fr": "Journaux de débogage",
+        "de": "Debug-Protokolle",
+        "es": "Registros de depuración"
+      },
       "description": {
         "en": "Write every request sent to the Rokus and a summary of their answers in the integration logs. Turn it on before reporting a problem.",
-        "fr": "Écrire chaque requête envoyée aux Roku et un résumé de leurs réponses dans les journaux de l'intégration. À activer avant de signaler un problème."
+        "fr": "Écrire chaque requête envoyée aux Roku et un résumé de leurs réponses dans les journaux de l'intégration. À activer avant de signaler un problème.",
+        "de": "Schreibt jede an die Rokus gesendete Anfrage und eine Zusammenfassung ihrer Antworten in die Protokolle der Integration. Schalte es ein, bevor du ein Problem meldest.",
+        "es": "Escribe cada solicitud enviada a los Roku y un resumen de sus respuestas en los registros de la integración. Actívelo antes de informar de un problema."
       },
       "required": false,
       "default": false
@@ -63,29 +90,53 @@
   "actions": [
     {
       "key": "test_connection",
-      "label": { "en": "Test the connection to a Roku", "fr": "Tester la connexion à un Roku" },
+      "label": {
+        "en": "Test the connection to a Roku",
+        "fr": "Tester la connexion à un Roku",
+        "de": "Verbindung zu einem Roku testen",
+        "es": "Probar la conexión con un Roku"
+      },
       "timeout_seconds": 30,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku (optional)", "fr": "Roku (facultatif)" },
+          "label": {
+            "en": "Roku (optional)",
+            "fr": "Roku (facultatif)",
+            "de": "Roku (optional)",
+            "es": "Roku (opcional)"
+          },
           "description": {
             "en": "Leave both fields empty to test every known Roku.",
-            "fr": "Laissez les deux champs vides pour tester tous les Roku connus."
+            "fr": "Laissez les deux champs vides pour tester tous les Roku connus.",
+            "de": "Lass beide Felder leer, um alle bekannten Rokus zu testen.",
+            "es": "Deje ambos campos vacíos para probar todos los Roku conocidos."
           },
           "required": false
         },
         {
           "key": "ip",
           "type": "string",
-          "label": { "en": "Or an IP address", "fr": "Ou une adresse IP" },
+          "label": {
+            "en": "Or an IP address",
+            "fr": "Ou une adresse IP",
+            "de": "Oder eine IP-Adresse",
+            "es": "O una dirección IP"
+          },
           "description": {
             "en": "For a Roku not added yet. If it answers, it appears in the Discovery tab.",
-            "fr": "Pour un Roku pas encore ajouté. S'il répond, il apparaît dans l'onglet Découverte."
+            "fr": "Pour un Roku pas encore ajouté. S'il répond, il apparaît dans l'onglet Découverte.",
+            "de": "Für einen noch nicht hinzugefügten Roku. Antwortet er, erscheint er im Tab „Entdecken“.",
+            "es": "Para un Roku aún no añadido. Si responde, aparece en la pestaña Descubrir."
           },
-          "placeholder": { "en": "e.g. 192.168.1.40", "fr": "ex. 192.168.1.40" },
+          "placeholder": {
+            "en": "e.g. 192.168.1.40",
+            "fr": "ex. 192.168.1.40",
+            "de": "z. B. 192.168.1.40",
+            "es": "p. ej. 192.168.1.40"
+          },
           "required": false
         }
       ]
@@ -94,28 +145,39 @@
   "scene_triggers": [
     {
       "key": "app_changed",
-      "label": { "en": "Roku app changed", "fr": "Application Roku changée" },
+      "label": {
+        "en": "Roku app changed",
+        "fr": "Application Roku changée",
+        "de": "Roku-App gewechselt",
+        "es": "Cambio de aplicación en un Roku"
+      },
       "description": {
         "en": "An app (or the home screen) came to the foreground on a Roku. Detected within about 10 seconds.",
-        "fr": "Une application (ou l'écran d'accueil) est passée au premier plan sur un Roku. Détecté en 10 secondes environ."
+        "fr": "Une application (ou l'écran d'accueil) est passée au premier plan sur un Roku. Détecté en 10 secondes environ.",
+        "de": "Eine App (oder der Startbildschirm) ist auf einem Roku in den Vordergrund gekommen. Wird in etwa 10 Sekunden erkannt.",
+        "es": "Una aplicación (o la pantalla de inicio) ha pasado a primer plano en un Roku. Se detecta en unos 10 segundos."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" }
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" }
         },
         {
           "key": "app",
           "type": "string",
           "label": {
             "en": "App name, exactly as shown by the Roku",
-            "fr": "Nom de l'application, exactement comme l'affiche le Roku"
+            "fr": "Nom de l'application, exactement comme l'affiche le Roku",
+            "de": "App-Name, genau wie vom Roku angezeigt",
+            "es": "Nombre de la aplicación, tal como lo muestra el Roku"
           },
           "description": {
             "en": "e.g. Netflix, or Home for the home screen. Leave empty for any app.",
-            "fr": "ex. Netflix, ou Home pour l'écran d'accueil. Laissez vide pour n'importe quelle application."
+            "fr": "ex. Netflix, ou Home pour l'écran d'accueil. Laissez vide pour n'importe quelle application.",
+            "de": "z. B. Netflix, oder Home für den Startbildschirm. Leer lassen für jede App.",
+            "es": "p. ej. Netflix, o Home para la pantalla de inicio. Déjelo vacío para cualquier aplicación."
           }
         }
       ],
@@ -123,12 +185,22 @@
         {
           "key": "app",
           "type": "string",
-          "label": { "en": "App name", "fr": "Nom de l'application" }
+          "label": {
+            "en": "App name",
+            "fr": "Nom de l'application",
+            "de": "App-Name",
+            "es": "Nombre de la aplicación"
+          }
         },
         {
           "key": "app_id",
           "type": "string",
-          "label": { "en": "Roku app id", "fr": "Identifiant Roku de l'application" }
+          "label": {
+            "en": "Roku app id",
+            "fr": "Identifiant Roku de l'application",
+            "de": "Roku-ID der App",
+            "es": "Id de Roku de la aplicación"
+          }
         }
       ]
     }
@@ -136,10 +208,17 @@
   "scene_actions": [
     {
       "key": "launch_app",
-      "label": { "en": "Open an app on a Roku", "fr": "Ouvrir une application sur un Roku" },
+      "label": {
+        "en": "Open an app on a Roku",
+        "fr": "Ouvrir une application sur un Roku",
+        "de": "App auf einem Roku öffnen",
+        "es": "Abrir una aplicación en un Roku"
+      },
       "description": {
         "en": "Bring an installed app to the foreground, by its name (Home: the home screen).",
-        "fr": "Met au premier plan une application installée, par son nom (Home : l'écran d'accueil)."
+        "fr": "Met au premier plan une application installée, par son nom (Home : l'écran d'accueil).",
+        "de": "Holt eine installierte App anhand ihres Namens in den Vordergrund (Home: der Startbildschirm).",
+        "es": "Pone en primer plano una aplicación instalada, por su nombre (Home: la pantalla de inicio)."
       },
       "timeout_seconds": 20,
       "fields": [
@@ -147,18 +226,30 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "required": true
         },
         {
           "key": "app",
           "type": "string",
-          "label": { "en": "App name", "fr": "Nom de l'application" },
+          "label": {
+            "en": "App name",
+            "fr": "Nom de l'application",
+            "de": "App-Name",
+            "es": "Nombre de la aplicación"
+          },
           "description": {
             "en": "As shown by the Roku, e.g. Netflix, YouTube, Disney Plus (case and accents do not matter).",
-            "fr": "Tel qu'affiché par le Roku, ex. Netflix, YouTube, Disney Plus (majuscules et accents indifférents)."
+            "fr": "Tel qu'affiché par le Roku, ex. Netflix, YouTube, Disney Plus (majuscules et accents indifférents).",
+            "de": "Wie vom Roku angezeigt, z. B. Netflix, YouTube, Disney Plus (Groß-/Kleinschreibung und Akzente egal).",
+            "es": "Tal como lo muestra el Roku, p. ej. Netflix, YouTube, Disney Plus (mayúsculas y acentos indiferentes)."
           },
-          "placeholder": { "en": "e.g. Netflix", "fr": "ex. Netflix" },
+          "placeholder": {
+            "en": "e.g. Netflix",
+            "fr": "ex. Netflix",
+            "de": "z. B. Netflix",
+            "es": "p. ej. Netflix"
+          },
           "required": true
         }
       ],
@@ -166,12 +257,22 @@
         {
           "key": "app_id",
           "type": "string",
-          "label": { "en": "Roku app id", "fr": "Identifiant Roku de l'application" }
+          "label": {
+            "en": "Roku app id",
+            "fr": "Identifiant Roku de l'application",
+            "de": "Roku-ID der App",
+            "es": "Id de Roku de la aplicación"
+          }
         },
         {
           "key": "app_name",
           "type": "string",
-          "label": { "en": "App name", "fr": "Nom de l'application" }
+          "label": {
+            "en": "App name",
+            "fr": "Nom de l'application",
+            "de": "App-Name",
+            "es": "Nombre de la aplicación"
+          }
         }
       ]
     },
@@ -179,11 +280,15 @@
       "key": "send_key",
       "label": {
         "en": "Press a Roku remote key",
-        "fr": "Appuyer sur une touche de télécommande Roku"
+        "fr": "Appuyer sur une touche de télécommande Roku",
+        "de": "Taste der Roku-Fernbedienung drücken",
+        "es": "Pulsar una tecla del mando Roku"
       },
       "description": {
         "en": "Send a remote key to a Roku, once or several times. Volume, mute, channel and power keys work on Roku TVs only.",
-        "fr": "Envoie une touche de télécommande à un Roku, une ou plusieurs fois. Volume, sourdine, chaînes et marche/arrêt : Roku TV seulement."
+        "fr": "Envoie une touche de télécommande à un Roku, une ou plusieurs fois. Volume, sourdine, chaînes et marche/arrêt : Roku TV seulement.",
+        "de": "Sendet eine Fernbedienungstaste an einen Roku, einmal oder mehrmals. Lautstärke, Stumm, Kanal und Ein/Aus: nur bei Roku TVs.",
+        "es": "Envía una tecla del mando a un Roku, una o varias veces. Volumen, silencio, canales y encendido: solo en Roku TV."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -191,46 +296,141 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "required": true
         },
         {
           "key": "key",
           "type": "select",
-          "label": { "en": "Key", "fr": "Touche" },
+          "label": { "en": "Key", "fr": "Touche", "de": "Taste", "es": "Tecla" },
           "required": true,
           "options": [
-            { "value": "home", "label": { "en": "Home", "fr": "Accueil" } },
-            { "value": "back", "label": { "en": "Back", "fr": "Retour" } },
-            { "value": "up", "label": { "en": "Up", "fr": "Haut" } },
-            { "value": "down", "label": { "en": "Down", "fr": "Bas" } },
-            { "value": "left", "label": { "en": "Left", "fr": "Gauche" } },
-            { "value": "right", "label": { "en": "Right", "fr": "Droite" } },
-            { "value": "select", "label": { "en": "OK", "fr": "OK" } },
-            { "value": "info", "label": { "en": "Options (*)", "fr": "Options (*)" } },
-            { "value": "play", "label": { "en": "Play/Pause", "fr": "Lecture/Pause" } },
-            { "value": "rewind", "label": { "en": "Rewind", "fr": "Retour rapide" } },
-            { "value": "forward", "label": { "en": "Fast forward", "fr": "Avance rapide" } },
+            {
+              "value": "home",
+              "label": { "en": "Home", "fr": "Accueil", "de": "Startseite", "es": "Inicio" }
+            },
+            {
+              "value": "back",
+              "label": { "en": "Back", "fr": "Retour", "de": "Zurück", "es": "Atrás" }
+            },
+            { "value": "up", "label": { "en": "Up", "fr": "Haut", "de": "Hoch", "es": "Arriba" } },
+            {
+              "value": "down",
+              "label": { "en": "Down", "fr": "Bas", "de": "Runter", "es": "Abajo" }
+            },
+            {
+              "value": "left",
+              "label": { "en": "Left", "fr": "Gauche", "de": "Links", "es": "Izquierda" }
+            },
+            {
+              "value": "right",
+              "label": { "en": "Right", "fr": "Droite", "de": "Rechts", "es": "Derecha" }
+            },
+            { "value": "select", "label": { "en": "OK", "fr": "OK", "de": "OK", "es": "OK" } },
+            {
+              "value": "info",
+              "label": {
+                "en": "Options (*)",
+                "fr": "Options (*)",
+                "de": "Optionen (*)",
+                "es": "Opciones (*)"
+              }
+            },
+            {
+              "value": "play",
+              "label": {
+                "en": "Play/Pause",
+                "fr": "Lecture/Pause",
+                "de": "Wiedergabe/Pause",
+                "es": "Reproducir/Pausa"
+              }
+            },
+            {
+              "value": "rewind",
+              "label": {
+                "en": "Rewind",
+                "fr": "Retour rapide",
+                "de": "Zurückspulen",
+                "es": "Retroceder"
+              }
+            },
+            {
+              "value": "forward",
+              "label": {
+                "en": "Fast forward",
+                "fr": "Avance rapide",
+                "de": "Vorspulen",
+                "es": "Avanzar"
+              }
+            },
             {
               "value": "replay",
-              "label": { "en": "Instant replay", "fr": "Relecture instantanée" }
+              "label": {
+                "en": "Instant replay",
+                "fr": "Relecture instantanée",
+                "de": "Sofortige Wiederholung",
+                "es": "Repetición instantánea"
+              }
             },
-            { "value": "volume_up", "label": { "en": "Volume up", "fr": "Volume +" } },
-            { "value": "volume_down", "label": { "en": "Volume down", "fr": "Volume −" } },
-            { "value": "volume_mute", "label": { "en": "Mute", "fr": "Sourdine" } },
-            { "value": "channel_up", "label": { "en": "Channel up", "fr": "Chaîne suivante" } },
+            {
+              "value": "volume_up",
+              "label": {
+                "en": "Volume up",
+                "fr": "Volume +",
+                "de": "Lautstärke höher",
+                "es": "Subir volumen"
+              }
+            },
+            {
+              "value": "volume_down",
+              "label": {
+                "en": "Volume down",
+                "fr": "Volume −",
+                "de": "Lautstärke niedriger",
+                "es": "Bajar volumen"
+              }
+            },
+            {
+              "value": "volume_mute",
+              "label": { "en": "Mute", "fr": "Sourdine", "de": "Stumm", "es": "Silenciar" }
+            },
+            {
+              "value": "channel_up",
+              "label": {
+                "en": "Channel up",
+                "fr": "Chaîne suivante",
+                "de": "Nächster Kanal",
+                "es": "Canal siguiente"
+              }
+            },
             {
               "value": "channel_down",
-              "label": { "en": "Channel down", "fr": "Chaîne précédente" }
+              "label": {
+                "en": "Channel down",
+                "fr": "Chaîne précédente",
+                "de": "Voriger Kanal",
+                "es": "Bajar canal"
+              }
             },
-            { "value": "power_on", "label": { "en": "Turn on", "fr": "Allumer" } },
-            { "value": "power_off", "label": { "en": "Turn off", "fr": "Éteindre" } }
+            {
+              "value": "power_on",
+              "label": { "en": "Turn on", "fr": "Allumer", "de": "Einschalten", "es": "Encender" }
+            },
+            {
+              "value": "power_off",
+              "label": { "en": "Turn off", "fr": "Éteindre", "de": "Ausschalten", "es": "Apagar" }
+            }
           ]
         },
         {
           "key": "times",
           "type": "number",
-          "label": { "en": "Number of presses", "fr": "Nombre d'appuis" },
+          "label": {
+            "en": "Number of presses",
+            "fr": "Nombre d'appuis",
+            "de": "Anzahl der Tastendrücke",
+            "es": "Número de pulsaciones"
+          },
           "required": false,
           "default": 1,
           "min": 1,
@@ -240,10 +440,17 @@
     },
     {
       "key": "type_text",
-      "label": { "en": "Type a text on a Roku", "fr": "Taper un texte sur un Roku" },
+      "label": {
+        "en": "Type a text on a Roku",
+        "fr": "Taper un texte sur un Roku",
+        "de": "Text auf einem Roku eingeben",
+        "es": "Escribir un texto en un Roku"
+      },
       "description": {
         "en": "Type a text in the field shown on the Roku (search, login), one character at a time. Not for a sensitive password: a scene is readable by every Gladys user.",
-        "fr": "Tape un texte dans le champ affiché sur le Roku (recherche, identifiant), caractère par caractère. Pas de mot de passe sensible : une scène est lisible par tous les utilisateurs de Gladys."
+        "fr": "Tape un texte dans le champ affiché sur le Roku (recherche, identifiant), caractère par caractère. Pas de mot de passe sensible : une scène est lisible par tous les utilisateurs de Gladys.",
+        "de": "Gibt einen Text Zeichen für Zeichen in das auf dem Roku angezeigte Feld ein (Suche, Anmeldung). Nicht für ein sensibles Passwort: Eine Szene kann jeder Gladys-Benutzer lesen.",
+        "es": "Escribe un texto en el campo mostrado en el Roku (búsqueda, inicio de sesión), carácter a carácter. No para una contraseña sensible: todos los usuarios de Gladys pueden leer una escena."
       },
       "timeout_seconds": 60,
       "fields": [
@@ -251,18 +458,30 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "required": true
         },
         {
           "key": "text",
           "type": "string",
-          "label": { "en": "Text to type", "fr": "Texte à taper" },
+          "label": {
+            "en": "Text to type",
+            "fr": "Texte à taper",
+            "de": "Einzugebender Text",
+            "es": "Texto que escribir"
+          },
           "description": {
             "en": "Up to 100 characters. Open the field on the Roku first (the cursor must be in it).",
-            "fr": "100 caractères au plus. Ouvrez d'abord le champ sur le Roku (le curseur doit y être)."
+            "fr": "100 caractères au plus. Ouvrez d'abord le champ sur le Roku (le curseur doit y être).",
+            "de": "Höchstens 100 Zeichen. Öffne zuerst das Feld auf dem Roku (der Cursor muss darin stehen).",
+            "es": "Hasta 100 caracteres. Abra primero el campo en el Roku (el cursor debe estar en él)."
           },
-          "placeholder": { "en": "e.g. stranger things", "fr": "ex. stranger things" },
+          "placeholder": {
+            "en": "e.g. stranger things",
+            "fr": "ex. stranger things",
+            "de": "z. B. stranger things",
+            "es": "p. ej. stranger things"
+          },
           "required": true
         }
       ]
@@ -271,10 +490,17 @@
   "widgets": [
     {
       "key": "remote",
-      "label": { "en": "Roku remote", "fr": "Télécommande Roku" },
+      "label": {
+        "en": "Roku remote",
+        "fr": "Télécommande Roku",
+        "de": "Roku-Fernbedienung",
+        "es": "Mando Roku"
+      },
       "description": {
         "en": "Power and foreground app of a Roku, with Power (Roku TV) or Play/Pause, Home, Back and OK.",
-        "fr": "Alimentation et application d'un Roku, avec Marche (Roku TV) ou Lecture, Accueil, Retour, OK."
+        "fr": "Alimentation et application d'un Roku, avec Marche (Roku TV) ou Lecture, Accueil, Retour, OK.",
+        "de": "Zustand und aktive App eines Roku, mit Ein/Aus (Roku TV) oder Play/Pause, Startseite, Zurück, OK.",
+        "es": "Encendido y aplicación de un Roku, con Encendido (Roku TV) o Reproducir, Inicio, Atrás y OK."
       },
       "icon": "tv",
       "settings": [
@@ -282,10 +508,12 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "description": {
             "en": "Leave empty to show the first Roku.",
-            "fr": "Laissez vide pour afficher le premier Roku."
+            "fr": "Laissez vide pour afficher le premier Roku.",
+            "de": "Leer lassen, um den ersten Roku anzuzeigen.",
+            "es": "Déjelo vacío para mostrar el primer Roku."
           },
           "required": false
         }
@@ -294,10 +522,17 @@
     },
     {
       "key": "media",
-      "label": { "en": "Roku playback", "fr": "Lecture Roku" },
+      "label": {
+        "en": "Roku playback",
+        "fr": "Lecture Roku",
+        "de": "Roku-Wiedergabe",
+        "es": "Reproducción Roku"
+      },
       "description": {
         "en": "The app playing on a Roku with its icon, the playback state and position, and the playback keys.",
-        "fr": "L'application en cours sur un Roku avec son icône, l'état et la position de lecture, et les touches."
+        "fr": "L'application en cours sur un Roku avec son icône, l'état et la position de lecture, et les touches.",
+        "de": "Die laufende App eines Roku mit Symbol, Wiedergabestatus und -position sowie die Tasten.",
+        "es": "La aplicación en curso en un Roku con su icono, el estado y la posición de lectura, y las teclas."
       },
       "icon": "play-circle",
       "settings": [
@@ -305,10 +540,12 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "description": {
             "en": "Leave empty to show the first Roku.",
-            "fr": "Laissez vide pour afficher le premier Roku."
+            "fr": "Laissez vide pour afficher le premier Roku.",
+            "de": "Leer lassen, um den ersten Roku anzuzeigen.",
+            "es": "Déjelo vacío para mostrar el primer Roku."
           },
           "required": false
         }
@@ -317,10 +554,17 @@
     },
     {
       "key": "apps",
-      "label": { "en": "Roku apps", "fr": "Applications Roku" },
+      "label": {
+        "en": "Roku apps",
+        "fr": "Applications Roku",
+        "de": "Roku-Apps",
+        "es": "Aplicaciones Roku"
+      },
       "description": {
         "en": "Up to four app shortcuts on a Roku, with their icons, the foreground one marked.",
-        "fr": "Jusqu'à quatre raccourcis d'applications sur un Roku, avec leurs icônes, celle en cours marquée."
+        "fr": "Jusqu'à quatre raccourcis d'applications sur un Roku, avec leurs icônes, celle en cours marquée.",
+        "de": "Bis zu vier App-Verknüpfungen auf einem Roku, mit Symbolen, die aktive markiert.",
+        "es": "Hasta cuatro accesos directos a aplicaciones de un Roku, con sus iconos, la activa marcada."
       },
       "icon": "grid",
       "settings": [
@@ -328,39 +572,43 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "description": {
             "en": "Leave empty to show the first Roku.",
-            "fr": "Laissez vide pour afficher le premier Roku."
+            "fr": "Laissez vide pour afficher le premier Roku.",
+            "de": "Leer lassen, um den ersten Roku anzuzeigen.",
+            "es": "Déjelo vacío para mostrar el primer Roku."
           },
           "required": false
         },
         {
           "key": "app_1",
           "type": "string",
-          "label": { "en": "App 1", "fr": "Application 1" },
+          "label": { "en": "App 1", "fr": "Application 1", "de": "App 1", "es": "Aplicación 1" },
           "description": {
             "en": "4 apps at most per widget: type the names you want, e.g. Disney+, KiKA, YouTube (case and accents do not matter). Left empty: the first 4 installed apps. For more apps, add a second Roku apps widget.",
-            "fr": "4 applications au plus par widget : saisissez les noms voulus, ex. Disney+, KiKA, YouTube (majuscules et accents indifférents). Vides : les 4 premières applications installées. Pour en avoir plus, ajoutez un second widget Applications Roku."
+            "fr": "4 applications au plus par widget : saisissez les noms voulus, ex. Disney+, KiKA, YouTube (majuscules et accents indifférents). Vides : les 4 premières applications installées. Pour en avoir plus, ajoutez un second widget Applications Roku.",
+            "de": "Höchstens 4 Apps pro Widget: Gib die gewünschten Namen ein, z. B. Disney+, KiKA, YouTube (Groß-/Kleinschreibung und Akzente egal). Leer: die ersten 4 installierten Apps. Für mehr Apps füge ein zweites Widget „Roku-Apps“ hinzu.",
+            "es": "4 aplicaciones como máximo por widget: escriba los nombres deseados, p. ej. Disney+, KiKA, YouTube (mayúsculas y acentos indiferentes). Vacíos: las 4 primeras aplicaciones instaladas. Para tener más, añada un segundo widget Aplicaciones Roku."
           },
           "required": false
         },
         {
           "key": "app_2",
           "type": "string",
-          "label": { "en": "App 2", "fr": "Application 2" },
+          "label": { "en": "App 2", "fr": "Application 2", "de": "App 2", "es": "Aplicación 2" },
           "required": false
         },
         {
           "key": "app_3",
           "type": "string",
-          "label": { "en": "App 3", "fr": "Application 3" },
+          "label": { "en": "App 3", "fr": "Application 3", "de": "App 3", "es": "Aplicación 3" },
           "required": false
         },
         {
           "key": "app_4",
           "type": "string",
-          "label": { "en": "App 4", "fr": "Application 4" },
+          "label": { "en": "App 4", "fr": "Application 4", "de": "App 4", "es": "Aplicación 4" },
           "required": false
         }
       ],
@@ -368,10 +616,17 @@
     },
     {
       "key": "navigation",
-      "label": { "en": "Roku navigation", "fr": "Navigation Roku" },
+      "label": {
+        "en": "Roku navigation",
+        "fr": "Navigation Roku",
+        "de": "Roku-Navigation",
+        "es": "Navegación Roku"
+      },
       "description": {
         "en": "The arrows of the Roku remote: up, down, left, right. Place it next to the Roku remote.",
-        "fr": "Les flèches de la télécommande Roku : haut, bas, gauche, droite. À placer près de la télécommande."
+        "fr": "Les flèches de la télécommande Roku : haut, bas, gauche, droite. À placer près de la télécommande.",
+        "de": "Die Pfeile der Roku-Fernbedienung: hoch, runter, links, rechts. Neben die Fernbedienung stellen.",
+        "es": "Las flechas del mando Roku: arriba, abajo, izquierda, derecha. Para colocar junto al mando Roku."
       },
       "icon": "move",
       "settings": [
@@ -379,10 +634,12 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Roku", "fr": "Roku" },
+          "label": { "en": "Roku", "fr": "Roku", "de": "Roku", "es": "Roku" },
           "description": {
             "en": "Leave empty to show the first Roku.",
-            "fr": "Laissez vide pour afficher le premier Roku."
+            "fr": "Laissez vide pour afficher le premier Roku.",
+            "de": "Leer lassen, um den ersten Roku anzuzeigen.",
+            "es": "Déjelo vacío para mostrar el primer Roku."
           },
           "required": false
         }

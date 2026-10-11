@@ -40,7 +40,7 @@ src/devices/roku.js               the Gladys device of a Roku: features, remote 
 src/widgets.js                    dashboard widgets (remote, navigation, media, apps), app icons
 src/scenes.js                     scene trigger data and scene action handlers
 src/actions.js                    manifest action handlers (test_connection)
-src/messages.js                   bilingual explanations of the errors
+src/messages.js                   explanations of the errors (en, fr, de, es), LANGUAGES
 src/nudger.js                     widget refresh nudges, 1 / 30 s / widget, only on a change
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
@@ -69,7 +69,8 @@ test/gladys-rules.test.js         conformance of every discovered device to the 
   in `CHANGELOG.md` (`### Added`, `Changed`, `Fixed`, `Removed`, `Security`).
   Never write a version heading: the Release workflow moves the section, and it
   becomes the notes of the GitHub Release.
-- **Manifest.** Texts are multi-language objects `{ "en": ..., "fr": ... }`:
+- **Manifest.** Texts are multi-language objects
+  `{ "en": ..., "fr": ..., "de": ..., "es": ... }`:
   `label`, `description` and `placeholder` alike, never a plain string. The
   catalog `description` holds 10 to 100 characters per language. A field the
   older cores do not know needs a higher `gladys_version` minimum
@@ -77,8 +78,11 @@ test/gladys-rules.test.js         conformance of every discovered device to the 
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in the four languages of the Gladys interface
+  (English, French, German, Spanish): action messages, widget texts, errors
+  and manifest texts. `test/i18n.test.js` fails on a missing language, an
+  empty text or one past its bound. The user documentation is
+  `docs/en.md` / `docs/fr.md` only, kept in sync.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -180,6 +184,8 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   Node 22 avec un avertissement.
 - L'indexeur rejette **en silence** : la raison n'apparaît que dans `rejected.json`, à côté de
   `https://integration-store-storage.gladysassistant.com/index.json`.
+- Le store ne lit et ne ré-héberge que `docs/en.md` et `docs/fr.md` (`DOCS_LANGUAGES` de
+  `integration-store`) : une doc `de` ou `es` ne serait jamais publiée.
 - La règle `data/` du `.gitignore` du template (pour le volume `/data`) exclut aussi `src/data/` :
   l'ancrer en `/data/`, dans `.prettierignore` aussi.
 

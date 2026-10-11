@@ -30,7 +30,7 @@ import {
   rokuStates,
   serialFromExternalId,
 } from './devices/roku.js';
-import { UserError } from './messages.js';
+import { MESSAGES, UserError } from './messages.js';
 
 const log = createLogger({ name: 'roku' });
 
@@ -619,10 +619,7 @@ export class RokuManager extends EventEmitter {
   require(serial) {
     const roku = this.rokus.get(serial);
     if (!roku?.ip) {
-      throw new UserError({
-        en: 'This Roku is unknown to the integration: run a device scan (Discovery tab).',
-        fr: "Ce Roku est inconnu de l'intégration : lancez une recherche d'appareils (onglet Découverte).",
-      });
+      throw new UserError(MESSAGES.unknownRoku);
     }
     return roku;
   }
@@ -696,10 +693,7 @@ export class RokuManager extends EventEmitter {
   async setPower(serial, on) {
     const roku = this.require(serial);
     if (roku.info && !roku.info.isTv) {
-      throw new UserError({
-        en: 'Only a Roku TV can be turned on and off: a Roku player follows the TV it is plugged in.',
-        fr: "Seule une Roku TV s'allume et s'éteint : un lecteur Roku suit la TV sur laquelle il est branché.",
-      });
+      throw new UserError(MESSAGES.tvOnlyPower);
     }
     log.debug(`${this.label(roku)}: power ${on ? 'on' : 'off'}`);
     await this.run(roku, async (client) => {
