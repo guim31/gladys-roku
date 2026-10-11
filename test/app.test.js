@@ -139,7 +139,12 @@ test('going Home on Roku OS 15 fires app_changed with "Home", not "Roku Dynamic 
   assert.equal(gladys.lastState(`${device.external_id}:app`), 'home');
   const content = await gladys.handlers.widgetGet.remote({ settings: {}, language: 'en' });
   const status = content.components.find((c) => c.type === 'status');
-  assert.deepEqual(status.items[1].value, { en: 'Home', fr: 'Accueil' });
+  assert.deepEqual(status.items[1].value, {
+    en: 'Home',
+    fr: 'Accueil',
+    de: 'Startseite',
+    es: 'Inicio',
+  });
   app.shutdown();
 });
 

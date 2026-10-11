@@ -30,15 +30,23 @@ test('normalized config', () => {
   assert.deepEqual(Object.keys(DEFAULT_CONFIG).sort(), ['debug_logs', 'hosts']);
 });
 
-test('every error kind has a bilingual explanation', () => {
+test('every error kind is explained in every language', () => {
   for (const kind of ['forbidden', 'refused', 'timeout', 'unreachable', 'http', 'malformed']) {
     const err = new RokuError('boom', { kind, ip: '192.0.2.1' });
     const full = explainError(err, 'Living room TV');
-    assert.ok(full.en && full.fr, kind);
+    assert.deepEqual(Object.keys(full), ['en', 'fr', 'de', 'es'], kind);
     const short = explainErrorShort(err);
-    assert.ok(short.en.length <= 200 && short.fr.length <= 200, `${kind}: toast too long`);
+    assert.ok(
+      Object.values(short).every((text) => text.length <= 200),
+      `${kind}: toast too long`,
+    );
   }
-  assert.deepEqual(explainError(new Error('plain')), { en: 'plain', fr: 'plain' });
+  assert.deepEqual(explainError(new Error('plain')), {
+    en: 'plain',
+    fr: 'plain',
+    de: 'plain',
+    es: 'plain',
+  });
 });
 
 test('widget nudges: at most one per widget every 10 s, the last one never lost', () => {

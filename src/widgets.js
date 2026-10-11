@@ -35,7 +35,7 @@
 
 import { WIDGET_COLORS, validateWidgetImage } from '@gladysassistant/integration-sdk';
 import { HOME_APP_ID, isTvInput } from './ecp/parse.js';
-import { explainErrorShort } from './messages.js';
+import { LANGUAGES, explainErrorShort } from './messages.js';
 
 /** Widget keys, declared in the manifest `widgets` (forever: never rename). */
 export const WIDGET = {
@@ -61,54 +61,106 @@ export const WIDGET_TTL_SECONDS = {
 
 const CURRENT_ICON = 'check-circle';
 
-const T = {
+// Every text the widgets show, in the languages of the Gladys interface.
+// Tight bounds: a button label holds 24 characters, a status value 40, a
+// badge 16 (test/i18n.test.js checks them).
+export const WIDGET_TEXTS = {
   noRoku: {
     en: 'No Roku known yet. Run a device scan in the integration (Discovery tab), then pick the Roku in the settings of this widget.',
     fr: "Aucun Roku connu pour l'instant. Lancez une recherche d'appareils dans l'intégration (onglet Découverte), puis choisissez le Roku dans les réglages de ce widget.",
+    de: 'Noch kein Roku bekannt. Starte in der Integration eine Gerätesuche (Tab „Entdecken“) und wähle dann den Roku in den Einstellungen dieses Widgets.',
+    es: 'Aún no se conoce ningún Roku. Inicie una búsqueda de dispositivos en la integración (pestaña Descubrir) y luego elija el Roku en los ajustes de este widget.',
   },
   unknownRoku: {
     en: 'The Roku picked in the settings of this widget is not reachable by the integration yet. Run a device scan, or pick another one.',
     fr: "Le Roku choisi dans les réglages de ce widget n'est pas encore joignable par l'intégration. Lancez une recherche d'appareils, ou choisissez-en un autre.",
+    de: 'Der in den Einstellungen dieses Widgets gewählte Roku ist für die Integration noch nicht erreichbar. Starte eine Gerätesuche oder wähle einen anderen.',
+    es: 'El Roku elegido en los ajustes de este widget aún no es accesible para la integración. Inicie una búsqueda de dispositivos o elija otro.',
   },
   forbidden: {
     en: 'Remote control refused: see "Control by mobile apps"',
     fr: 'Contrôle refusé : voir « Control by mobile apps »',
+    de: 'Steuerung abgelehnt: siehe „Control by mobile apps“',
+    es: 'Control rechazado: vea "Control by mobile apps"',
   },
   noApp: {
     en: 'No app to show: the Roku did not list its apps yet.',
     fr: "Aucune application à afficher : le Roku n'a pas encore donné sa liste.",
+    de: 'Keine App anzuzeigen: Der Roku hat seine Apps noch nicht aufgelistet.',
+    es: 'Ninguna aplicación que mostrar: el Roku aún no ha dado su lista.',
   },
-  power: { en: 'Power', fr: 'Alimentation' },
-  on: { en: 'On', fr: 'Allumé' },
-  standby: { en: 'Standby', fr: 'En veille' },
-  unreachable: { en: 'Unreachable', fr: 'Injoignable' },
-  refused: { en: 'Refused', fr: 'Refusé' },
-  app: { en: 'App', fr: 'Application' },
-  home: { en: 'Home', fr: 'Accueil' },
-  input: { en: 'Input', fr: 'Entrée' },
-  playback: { en: 'Playback', fr: 'Lecture' },
-  playing: { en: 'Playing', fr: 'En lecture' },
-  paused: { en: 'Paused', fr: 'En pause' },
-  stopped: { en: 'Stopped', fr: 'Arrêtée' },
-  position: { en: 'Position', fr: 'Position' },
-  live: { en: 'Live', fr: 'En direct' },
-  now: { en: 'Now', fr: 'En cours' },
-  turnOn: { en: 'Turn on', fr: 'Allumer' },
-  turnOff: { en: 'Turn off', fr: 'Éteindre' },
-  back: { en: 'Back', fr: 'Retour' },
-  ok: { en: 'OK', fr: 'OK' },
-  up: { en: 'Up', fr: 'Haut' },
-  down: { en: 'Down', fr: 'Bas' },
-  left: { en: 'Left', fr: 'Gauche' },
-  right: { en: 'Right', fr: 'Droite' },
-  playPause: { en: 'Play / Pause', fr: 'Lecture / Pause' },
-  rewind: { en: 'Rewind', fr: 'Retour rapide' },
-  forward: { en: 'Fast forward', fr: 'Avance rapide' },
+  power: { en: 'Power', fr: 'Alimentation', de: 'Zustand', es: 'Alimentación' },
+  on: { en: 'On', fr: 'Allumé', de: 'Eingeschaltet', es: 'Encendido' },
+  standby: { en: 'Standby', fr: 'En veille', de: 'Standby', es: 'En espera' },
+  unreachable: { en: 'Unreachable', fr: 'Injoignable', de: 'Nicht erreichbar', es: 'Inaccesible' },
+  refused: { en: 'Refused', fr: 'Refusé', de: 'Abgelehnt', es: 'Rechazado' },
+  app: { en: 'App', fr: 'Application', de: 'App', es: 'Aplicación' },
+  home: { en: 'Home', fr: 'Accueil', de: 'Startseite', es: 'Inicio' },
+  input: { en: 'Input', fr: 'Entrée', de: 'Eingang', es: 'Entrada' },
+  playback: { en: 'Playback', fr: 'Lecture', de: 'Wiedergabe', es: 'Reproducción' },
+  playing: { en: 'Playing', fr: 'En lecture', de: 'Wird abgespielt', es: 'Reproduciendo' },
+  paused: { en: 'Paused', fr: 'En pause', de: 'Pausiert', es: 'En pausa' },
+  stopped: { en: 'Stopped', fr: 'Arrêtée', de: 'Gestoppt', es: 'Detenida' },
+  position: { en: 'Position', fr: 'Position', de: 'Position', es: 'Posición' },
+  live: { en: 'Live', fr: 'En direct', de: 'Live', es: 'En directo' },
+  now: { en: 'Now', fr: 'En cours', de: 'Aktiv', es: 'En curso' },
+  turnOn: { en: 'Turn on', fr: 'Allumer', de: 'Einschalten', es: 'Encender' },
+  turnOff: { en: 'Turn off', fr: 'Éteindre', de: 'Ausschalten', es: 'Apagar' },
+  back: { en: 'Back', fr: 'Retour', de: 'Zurück', es: 'Atrás' },
+  ok: { en: 'OK', fr: 'OK', de: 'OK', es: 'OK' },
+  up: { en: 'Up', fr: 'Haut', de: 'Hoch', es: 'Arriba' },
+  down: { en: 'Down', fr: 'Bas', de: 'Runter', es: 'Abajo' },
+  left: { en: 'Left', fr: 'Gauche', de: 'Links', es: 'Izquierda' },
+  right: { en: 'Right', fr: 'Droite', de: 'Rechts', es: 'Derecha' },
+  playPause: {
+    en: 'Play / Pause',
+    fr: 'Lecture / Pause',
+    de: 'Play / Pause',
+    es: 'Reproducir / Pausa',
+  },
+  rewind: { en: 'Rewind', fr: 'Retour rapide', de: 'Zurückspulen', es: 'Retroceder' },
+  forward: { en: 'Fast forward', fr: 'Avance rapide', de: 'Vorspulen', es: 'Avanzar' },
+};
+
+/** Texts built around a value: one function per language. */
+export const WIDGET_TEMPLATES = {
   unknownApps: {
     en: (unknown) => `Not installed: ${unknown}`,
     fr: (unknown) => `Non installées : ${unknown}`,
+    de: (unknown) => `Nicht installiert: ${unknown}`,
+    es: (unknown) => `No instaladas: ${unknown}`,
+  },
+  opening: {
+    en: (name) => `Opening ${name}…`,
+    fr: (name) => `Ouverture de ${name}…`,
+    de: (name) => `${name} wird geöffnet…`,
+    es: (name) => `Abriendo ${name}…`,
   },
 };
+
+/** The toasts of the widget buttons (≤ 200 characters). */
+export const WIDGET_TOASTS = {
+  turningOn: {
+    en: 'Turning the TV on…',
+    fr: 'Allumage de la TV…',
+    de: 'Fernseher wird eingeschaltet…',
+    es: 'Encendiendo la TV…',
+  },
+  turningOff: {
+    en: 'Turning the TV off…',
+    fr: 'Extinction de la TV…',
+    de: 'Fernseher wird ausgeschaltet…',
+    es: 'Apagando la TV…',
+  },
+  keySent: {
+    en: 'Key sent to the Roku.',
+    fr: 'Touche envoyée au Roku.',
+    de: 'Taste an den Roku gesendet.',
+    es: 'Tecla enviada al Roku.',
+  },
+};
+
+const T = WIDGET_TEXTS;
 
 /** Buttons of fixed meaning: action key -> ECP key. */
 const KEY_BUTTONS = {
@@ -139,8 +191,28 @@ export function fit(text, max) {
   return value.length <= max ? value : `${value.slice(0, max - 1).trimEnd()}…`;
 }
 
-function lang(language) {
-  return language === 'fr' ? 'fr' : 'en';
+/**
+ * The language of a widget request among LANGUAGES, English otherwise.
+ *
+ * @param {unknown} language Language sent by the core (`fr`, maybe `de-DE`).
+ * @returns {string} A key of every text.
+ */
+export function lang(language) {
+  const short = String(language ?? '')
+    .slice(0, 2)
+    .toLowerCase();
+  return LANGUAGES.includes(short) ? short : 'en';
+}
+
+/**
+ * A multi-language template filled with the same value in every language.
+ *
+ * @param {Record<string, Function>} template One function per language.
+ * @param {unknown} value The value.
+ * @returns {Record<string, string>} The message.
+ */
+function fill(template, value) {
+  return Object.fromEntries(LANGUAGES.map((language) => [language, template[language](value)]));
 }
 
 /**
@@ -435,7 +507,7 @@ export function appsContent(roku, settings, language, findApp) {
     components.push({
       type: 'text',
       variant: 'caption',
-      text: fit(T.unknownApps[l](unknown.join(', ')), 80),
+      text: fit(WIDGET_TEMPLATES.unknownApps[l](unknown.join(', ')), 80),
     });
   }
   if (apps.length === 0) {
@@ -516,23 +588,21 @@ export function changesWhatIsShown(command) {
  * @param {Object} manager RokuManager.
  * @param {Object} command See widgetCommand().
  * @param {Object} roku The Roku.
- * @returns {Promise<{ en: string, fr: string }>} The toast.
+ * @returns {Promise<Record<string, string>>} The toast, in every language.
  */
 async function runCommand(manager, command, roku) {
   if (command.kind === 'power') {
     const on = !isOn(roku);
     await manager.setPower(command.serial, on);
-    return on
-      ? { en: 'Turning the TV on…', fr: 'Allumage de la TV…' }
-      : { en: 'Turning the TV off…', fr: 'Extinction de la TV…' };
+    return on ? WIDGET_TOASTS.turningOn : WIDGET_TOASTS.turningOff;
   }
   if (command.kind === 'app') {
     await manager.launch(command.serial, command.app);
     const name = fit(listedApp(roku, command.app)?.name ?? command.app, 40);
-    return { en: `Opening ${name}…`, fr: `Ouverture de ${name}…` };
+    return fill(WIDGET_TEMPLATES.opening, name);
   }
   await manager.pressKey(command.serial, command.ecp, command.times);
-  return { en: 'Key sent to the Roku.', fr: 'Touche envoyée au Roku.' };
+  return WIDGET_TOASTS.keySent;
 }
 
 /**

@@ -76,6 +76,8 @@ test('after a minute of use, every playback button of the media widget reaches t
     assert.deepEqual(result.message, {
       en: 'Key sent to the Roku.',
       fr: 'Touche envoyée au Roku.',
+      de: 'Taste an den Roku gesendet.',
+      es: 'Tecla enviada al Roku.',
     });
   }
 });

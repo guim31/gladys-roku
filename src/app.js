@@ -10,7 +10,7 @@ import { RokuManager } from './manager.js';
 import { ACTIONS } from './actions.js';
 import { SCENE_TRIGGER, appChangedEvent, createSceneActions } from './scenes.js';
 import { WIDGET_KEYS, createWidgetHandlers, widgetSignatures } from './widgets.js';
-import { explainError } from './messages.js';
+import { MESSAGES, explainError } from './messages.js';
 import { rokuIds } from './devices/roku.js';
 import { createWidgetNudger } from './nudger.js';
 
@@ -184,12 +184,7 @@ export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
       nudgeAllWidgets();
     } catch (err) {
       logger.error('Post-connection initialization failed', err);
-      await gladys
-        .setConnectionStatus(false, {
-          en: 'Initialization failed, check the integration logs.',
-          fr: "L'initialisation a échoué, consultez les journaux de l'intégration.",
-        })
-        .catch(() => {});
+      await gladys.setConnectionStatus(false, MESSAGES.initFailed).catch(() => {});
     }
   }
   gladys.on('connected', onConnected);
