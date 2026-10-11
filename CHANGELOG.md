@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-11
+
 ### Added
 
 - German and Spanish: the configuration, the actions, the scene triggers and
@@ -84,7 +86,8 @@ the notes of the version's GitHub Release.
   mobile apps" set to Limited or Disabled), with the setting to change.
 - Optional debug logs of every request sent to the Rokus.
 
-[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/guim31/gladys-roku/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/guim31/gladys-roku/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/guim31/gladys-roku/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/guim31/gladys-roku/compare/v1.0.1...v1.0.2
