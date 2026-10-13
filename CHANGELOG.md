@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-13
+
 ### Fixed
 
 - Rokus added to Gladys keep being refreshed every 10 seconds even when Gladys
@@ -103,7 +105,8 @@ the notes of the version's GitHub Release.
   mobile apps" set to Limited or Disabled), with the setting to change.
 - Optional debug logs of every request sent to the Rokus.
 
-[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/guim31/gladys-roku/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/guim31/gladys-roku/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/guim31/gladys-roku/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/guim31/gladys-roku/compare/v1.0.2...v1.0.3
