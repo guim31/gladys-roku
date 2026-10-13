@@ -1,9 +1,11 @@
 // -----------------------------------------------------------------------------
 // Minimal in-memory stand-in for the Gladys SDK object, for unit tests.
 //
-// The published SDK (0.14.0) does not ship `@gladysassistant/integration-sdk/
-// testing` yet, so this reproduces the surface the integration relies on, with
-// the host API checks that bite (external id prefix, poll frequency):
+// Written before the SDK shipped `@gladysassistant/integration-sdk/testing`
+// (0.15.0), and kept: the widget path simulation (fakeCore.js) is built on it.
+// The SDK fake checks the devices in test/polling.test.js. This reproduces the
+// surface the integration relies on, with the host API checks that bite
+// (external id prefix, poll frequency):
 //   - externalIds(type, platformId)       -> `ext:<selector>:<type>:<id>` ids
 //   - publishStates / publishDiscoveredDevices / setConnectionStatus /
 //     publishSceneEvent / requestWidgetRefresh / wakeOnLan -> recorded

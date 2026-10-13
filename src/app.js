@@ -104,12 +104,20 @@ export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
     updateConnectionStatus().catch(() => {});
   });
 
+  let sceneEventsFailing = false;
   manager.on('appChanged', (roku, _previous, app) => {
     const data = appChangedEvent(rokuIds(gladys, roku.serial).device, app);
     logger.debug(`Scene event ${SCENE_TRIGGER.APP_CHANGED}: ${data.app} on ${roku.info?.name}`);
     gladys
       .publishSceneEvent(SCENE_TRIGGER.APP_CHANGED, data)
-      .catch((err) => logger.warn(`Scene event not sent: ${err.message}`));
+      .then(() => {
+        sceneEventsFailing = false;
+      })
+      .catch((err) => {
+        // One warning per outage, not one per app change.
+        logger[sceneEventsFailing ? 'debug' : 'warn'](`Scene event not sent: ${err.message}`);
+        sceneEventsFailing = true;
+      });
   });
 
   // --- Discovery -----------------------------------------------------------------
@@ -124,12 +132,10 @@ export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
     await manager.setValue(device, feature, value);
   });
 
+  // The fallback: the internal timer (manager.startPolling) reads the created
+  // Rokus the core does not poll (Gladys#3198), and leaves alone those it does.
   gladys.onPoll(async (device) => {
-    const roku = manager.findByExternalId(device.external_id);
-    if (!roku) {
-      manager.syncCreatedDevices([device]);
-    }
-    await manager.refresh(manager.findByExternalId(device.external_id)?.serial);
+    await manager.corePoll(device);
   });
 
   gladys.onDeviceCreated(async (device) => {
@@ -186,6 +192,8 @@ export function createApp(gladys, managerOptions = {}, nudgerOptions = {}) {
       logger.error('Post-connection initialization failed', err);
       await gladys.setConnectionStatus(false, MESSAGES.initFailed).catch(() => {});
     }
+    // Even after a failed initialization: the created Rokus are known from gladys.devices.
+    manager.startPolling(gladys);
   }
   gladys.on('connected', onConnected);
 

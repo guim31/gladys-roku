@@ -18,6 +18,7 @@
 //     "Add to Gladys" fails.
 // -----------------------------------------------------------------------------
 
+import { DEVICE_POLL_FREQUENCIES } from '@gladysassistant/integration-sdk';
 import { HOME_APP_ID, isTvInput } from '../ecp/parse.js';
 
 /** Device type namespace of the external ids (forever). */
@@ -27,8 +28,12 @@ export const DEVICE_TYPE = 'roku';
 export const PARAM_IP = 'ROKU_IP';
 export const PARAM_MAC = 'ROKU_MAC';
 
-/** Poll cadence: one of the core's fixed values, in milliseconds. */
-export const POLL_FREQUENCY_MS = 10000;
+/**
+ * Poll cadence, in milliseconds: one of the core's fixed values (any other is
+ * a 400). Also the period of the internal timer (src/manager.js), which reads
+ * the Rokus the core does not poll (Gladys#3198).
+ */
+export const POLL_FREQUENCY_MS = DEVICE_POLL_FREQUENCIES.EVERY_10_SECONDS;
 
 /** Feature keys (suffix of the feature external ids, forever). */
 export const FEATURE = {
