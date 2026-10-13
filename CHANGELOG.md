@@ -10,6 +10,23 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Fixed
+
+- Rokus added to Gladys keep being refreshed every 10 seconds even when Gladys
+  does not poll them: Gladys 5.2.0 never polls a device created without a
+  valid poll setting (GladysAssistant/Gladys#3198), so the integration now
+  reads the Rokus you added itself, and lets Gladys do it when it does.
+- A Roku in "Limited" mode is reported once in the logs, not on every read.
+
+### Changed
+
+- Quieter logs: a Roku that stops answering or Gladys refusing the states is
+  logged once, then once more when it works again; a scene event that cannot
+  be sent or an SSDP search the core refuses is reported once, not on every
+  try; the background search for a Roku that changed address no longer writes
+  at info level.
+- Gladys integration SDK 0.15.0, and up-to-date development tools.
+
 ## [1.1.0] - 2026-10-11
 
 ### Added

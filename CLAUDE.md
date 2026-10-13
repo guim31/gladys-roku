@@ -48,6 +48,7 @@ docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (manda
 test/                             node --test; helpers: fakeGladys (SDK), fakeRoku (LAN), fakeCore (widgets)
 test/fixtures/ecp/                real ECP answers adapted from python-rokuecp (MIT), anonymized
 test/gladys-rules.test.js         conformance of every discovered device to the core rules
+test/polling.test.js              internal poll timer (Gladys#3198), log volume, SDK fake Gladys checks
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -191,11 +192,25 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 
 ## Pièges rencontrés sur l'intégration Roku
 
-- **Le SDK publié (0.14.0) est en retard sur le README de `master`** : ni
-  `publishChangedStates`, ni `@gladysassistant/integration-sdk/testing`. Le
-  dédoublonnage des états est fait dans `src/manager.js`, le faux SDK dans
-  `test/helpers/fakeGladys.js`. Vérifier dans `node_modules` avant d'utiliser
-  une méthode documentée sur `master`.
+- **SDK 0.15** : `publishChangedStates` et `@gladysassistant/integration-sdk/testing`
+  existent désormais, mais le dépôt garde son dédoublonnage (`src/manager.js`, avec
+  `forgetPublished`) et son faux SDK (`test/helpers/fakeGladys.js`, sur lequel
+  repose `fakeCore.js`) : les remplacer ne simplifierait rien. Le faux Gladys du
+  SDK sert seulement de contrôle de conformité (`test/polling.test.js`). Vérifier
+  dans `node_modules` avant d'utiliser une méthode documentée sur `master`.
+- **Polling (Gladys#3198, correctif #3199 non publié à ce jour)** : le cœur 5.2.0
+  ne sonde jamais un appareil créé sans `should_poll`/`poll_frequency` valides, et
+  un appareil garde les valeurs de sa création. `src/manager.js` sonde donc
+  lui-même les Roku de `gladys.devices` toutes les 10 s (`startPolling`, lancé à
+  la connexion) ; `onPoll` reste le repli, et un Roku que le cœur a sondé il y a
+  moins de 15 s, ou lu il y a moins de 5 s, est laissé de côté : pas de double
+  lecture. Le minuteur s'arrête dans `shutdown()`.
+- **Logs** : rien en `info` par lecture, par état publié ou par événement. Une
+  panne répétée (Roku injoignable, mode _Limited_, Gladys qui refuse les états)
+  donne une ligne au début et une au retour (`roku.down`, `publishFailing`) ; un
+  événement de scène refusé ou un SSDP refusé par le cœur, un seul
+  avertissement par panne ; le reste en `debug`.
+  `test/polling.test.js` le vérifie en espionnant `console.log`/`console.error`.
 - **Rendu des fonctionnalités `television`** : le front dessine en bouton
   poussoir tous les types `television` sauf `binary`, `volume` et `channel`
   (`TelevisionPushButtonFeatureTypes`). `music/playback_state` est un contrôle

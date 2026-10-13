@@ -22,6 +22,7 @@ import {
   FEATURE,
   PARAM_IP,
   PARAM_MAC,
+  POLL_FREQUENCY_MS,
   REMOTE_KEYS,
   buildRokuDevice,
   featureKey,
@@ -49,6 +50,17 @@ const REFRESH_AFTER_COMMAND_MS = 1500;
 /** Wake-on-LAN: PowerOn retries, and the delay between them (core: 1 wake / 2 s). */
 const WAKE_ATTEMPTS = 4;
 const WAKE_RETRY_DELAY_MS = 2500;
+
+/**
+ * The integration reads the created Rokus itself, every POLL_FREQUENCY_MS: the
+ * core 5.2.0 never polls a device created without a valid should_poll /
+ * poll_frequency (GladysAssistant/Gladys#3198), and a device keeps the values
+ * it was created with. A Roku the core polled within this window is left to
+ * the core (onPoll), so a working core and the timer never read it twice.
+ */
+const CORE_POLL_WINDOW_MS = POLL_FREQUENCY_MS * 1.5;
+/** A Roku read this recently (a command, the core) is not read again by the timer. */
+const MIN_READ_GAP_MS = POLL_FREQUENCY_MS / 2;
 
 const NETWORK_ERRORS = new Set(['unreachable', 'timeout', 'refused']);
 /** Longest text typed by the type_text scene action (one request per character). */
@@ -89,6 +101,7 @@ export class RokuManager extends EventEmitter {
    * @param {Function} [options.now] Clock (tests).
    * @param {Function} [options.sleep] (ms) => Promise (tests).
    * @param {Function} [options.schedule] (fn, ms) => timer (tests).
+   * @param {Function} [options.cancel] (timer) => void, cancels a scheduled timer (tests).
    */
   constructor(gladys, options = {}) {
     super();
@@ -103,6 +116,7 @@ export class RokuManager extends EventEmitter {
         timer.unref?.();
         return timer;
       });
+    this.cancel = options.cancel ?? clearTimeout;
     /** @type {Map<string, Object>} */
     this.rokus = new Map();
     /** Last state published per feature external id (publish changes only). */
@@ -115,6 +129,12 @@ export class RokuManager extends EventEmitter {
     this.lastFailures = [];
     /** Outcome of the last SSDP scan: { at, count, error }. */
     this.lastScan = null;
+    /** Internal poll loop: its timer, and whether publishing to Gladys is failing. */
+    this.pollTimer = null;
+    this.polling = false;
+    this.publishFailing = false;
+    /** Whether the last SSDP scan failed (one warning, not one per try). */
+    this.ssdpUnavailable = false;
   }
 
   // --- Registry ----------------------------------------------------------------
@@ -198,7 +218,7 @@ export class RokuManager extends EventEmitter {
    * @param {number} [timeoutSeconds] Scan length.
    * @returns {Promise<Array<{ ip, serial, mac }>>} The Rokus that answered.
    */
-  async scanSsdp(timeoutSeconds = SSDP_TIMEOUT_SECONDS) {
+  async scanSsdp(timeoutSeconds = SSDP_TIMEOUT_SECONDS, { quiet = false } = {}) {
     try {
       const results = await this.gladys.scanNetwork('ssdp', { timeoutSeconds });
       const found = new Map();
@@ -208,7 +228,11 @@ export class RokuManager extends EventEmitter {
           found.set(parsed.ip, parsed);
         }
       }
-      log.info(`SSDP: ${found.size} Roku(s) answered (${(results ?? []).length} replies)`);
+      // A scan the user asked for is worth a line; a background one is not.
+      log[quiet ? 'debug' : 'info'](
+        `SSDP: ${found.size} Roku(s) answered (${(results ?? []).length} replies)`,
+      );
+      this.ssdpUnavailable = false;
       for (const roku of found.values()) {
         log.debug(`SSDP: Roku ${roku.serial || '(no serial)'} at ${roku.ip}`);
       }
@@ -216,9 +240,11 @@ export class RokuManager extends EventEmitter {
       return [...found.values()];
     } catch (err) {
       // 403: a core without SSDP discovery; 409: a scan already running.
-      log.warn(
+      // Said once: an old core answers 403 to every scan.
+      log[this.ssdpUnavailable ? 'debug' : 'warn'](
         `SSDP discovery unavailable (${err.status ?? ''} ${err.message}): manual addresses only`,
       );
+      this.ssdpUnavailable = true;
       this.lastScan = { at: this.now(), count: 0, error: err };
       return [];
     }
@@ -257,6 +283,7 @@ export class RokuManager extends EventEmitter {
     roku.failures = 0;
     roku.state.poweredOn = info.poweredOn;
     roku.state.powerMode = info.powerMode;
+    this.logRecovered(roku, 'unreachable');
     log.debug(
       `${info.name} (${roku.ip}): ${info.vendor} ${info.model} [${info.modelNumber}], ` +
         `${info.deviceType}, Roku OS ${info.softwareVersion}, power-mode=${info.powerMode || '?'}`,
@@ -397,6 +424,7 @@ export class RokuManager extends EventEmitter {
     if (!roku?.ip) {
       return roku;
     }
+    roku.readAt = this.now();
     const before = {
       app: roku.state.app?.id,
       appName: roku.state.app?.name,
@@ -447,6 +475,7 @@ export class RokuManager extends EventEmitter {
       if (this.needsApps(roku)) {
         appsChanged = await this.refreshApps(roku, client);
       }
+      this.logRecovered(roku, 'forbidden');
     } catch (err) {
       this.recordFailure(roku, err);
       if (roku.failures >= FAILURES_BEFORE_RELOCATE && (await this.relocate(roku))) {
@@ -483,17 +512,18 @@ export class RokuManager extends EventEmitter {
     return roku;
   }
 
+  /**
+   * A failed read. Logged once per outage (`roku.down`), not once per poll:
+   * the counterpart line comes from logRecovered.
+   */
   recordFailure(roku, err) {
-    const wasKind = roku.error?.kind;
     roku.error = err;
     if (err?.kind === 'forbidden') {
       // The Roku answers, it only refuses: its power state is unknown.
       roku.reachable = true;
-      if (wasKind !== 'forbidden') {
-        log.warn(
-          `${this.label(roku)}: ECP refused (${err.message}) - see "Control by mobile apps"`,
-        );
-      }
+      const message = `${this.label(roku)}: ECP refused (${err.message}) - see "Control by mobile apps"`;
+      log[roku.down?.forbidden ? 'debug' : 'warn'](message);
+      roku.down = { ...roku.down, forbidden: true };
       return;
     }
     roku.failures += 1;
@@ -501,11 +531,24 @@ export class RokuManager extends EventEmitter {
     roku.state.playing = false;
     roku.state.media = null;
     const message = `${this.label(roku)}: not reachable (${err?.message})`;
-    if (roku.failures === 1) {
-      log.info(message);
-    } else {
-      log.debug(message);
+    log[roku.down?.unreachable ? 'debug' : 'info'](message);
+    roku.down = { ...roku.down, unreachable: true };
+  }
+
+  /**
+   * The line that closes an outage logged by recordFailure.
+   *
+   * @param {Object} roku The Roku.
+   * @param {'unreachable'|'forbidden'} kind What works again.
+   */
+  logRecovered(roku, kind) {
+    if (!roku.down?.[kind]) {
+      return;
     }
+    delete roku.down[kind];
+    log.info(
+      `${this.label(roku)}: ${kind === 'unreachable' ? 'reachable again' : 'remote control accepted again'}`,
+    );
   }
 
   /**
@@ -523,7 +566,7 @@ export class RokuManager extends EventEmitter {
     const knownIps = new Set([...this.rokus.values()].map((known) => known.ip));
     // The USN of the reply carries the serial number: check it first, then
     // any address no known Roku uses (the device-info serial is the truth).
-    const candidates = (await this.scanSsdp())
+    const candidates = (await this.scanSsdp(SSDP_TIMEOUT_SECONDS, { quiet: true }))
       .filter((result) => result.ip !== roku.ip)
       .filter((result) => result.serial === roku.serial || !knownIps.has(result.ip))
       .sort((a, b) => Number(b.serial === roku.serial) - Number(a.serial === roku.serial));
@@ -563,7 +606,18 @@ export class RokuManager extends EventEmitter {
     if (changed.length === 0) {
       return 0;
     }
-    await this.gladys.publishStates(changed);
+    try {
+      await this.gladys.publishStates(changed);
+    } catch (err) {
+      // Logged once per outage (Gladys restarting, 429), not once per read.
+      log[this.publishFailing ? 'debug' : 'warn'](`States not sent to Gladys: ${err.message}`);
+      this.publishFailing = true;
+      throw err;
+    }
+    if (this.publishFailing) {
+      log.info('States sent to Gladys again');
+      this.publishFailing = false;
+    }
     for (const state of changed) {
       this.published.set(state.device_feature_external_id, stateSignature(state));
     }
@@ -588,8 +642,79 @@ export class RokuManager extends EventEmitter {
     }
   }
 
+  // --- Polling -----------------------------------------------------------------
+
+  /**
+   * Handler of `onPoll`: the core polls this Roku, the internal timer leaves it
+   * alone for a while.
+   *
+   * @param {Object} device Gladys device.
+   * @returns {Promise<Object|undefined>} The Roku.
+   */
+  corePoll(device) {
+    const serial = serialFromExternalId(device?.external_id);
+    if (!serial) {
+      return Promise.resolve(undefined);
+    }
+    if (!this.rokus.has(serial)) {
+      this.syncCreatedDevices([device]);
+    }
+    this.rokus.get(serial).corePolledAt = this.now();
+    return this.refresh(serial);
+  }
+
+  /**
+   * One round of the internal timer: read every created Roku the core did not
+   * poll lately and that was not read just before. Never throws.
+   *
+   * @param {Array<Object>} devices The devices created in Gladys (`gladys.devices`).
+   * @returns {Promise<number>} How many Rokus were read.
+   */
+  async pollCreated(devices = []) {
+    this.syncCreatedDevices(devices);
+    const now = this.now();
+    const due = [...new Set(devices.map((device) => serialFromExternalId(device?.external_id)))]
+      .map((serial) => serial && this.rokus.get(serial))
+      .filter((roku) => roku?.ip)
+      .filter((roku) => !(now - (roku.corePolledAt ?? -Infinity) < CORE_POLL_WINDOW_MS))
+      .filter((roku) => !(now - (roku.readAt ?? -Infinity) < MIN_READ_GAP_MS));
+    // A failed publication is logged by publishStates, once per outage.
+    await Promise.allSettled(due.map((roku) => this.refresh(roku.serial)));
+    return due.length;
+  }
+
+  /**
+   * Start the internal poll loop (restarts it when already running).
+   *
+   * @param {Object} gladys SDK instance: `devices` and `connected` are read on every round.
+   */
+  startPolling(gladys = this.gladys) {
+    this.stopPolling();
+    this.polling = true;
+    const tick = async () => {
+      // While the SDK reconnects, nothing could be published.
+      if (gladys.connected !== false) {
+        await this.pollCreated(gladys.devices ?? []);
+      }
+      if (this.polling) {
+        this.pollTimer = this.schedule(tick, POLL_FREQUENCY_MS);
+      }
+    };
+    this.pollTimer = this.schedule(tick, POLL_FREQUENCY_MS);
+  }
+
+  stopPolling() {
+    this.polling = false;
+    if (this.pollTimer !== null) {
+      this.cancel(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
   scheduleRefresh(serial, delayMs = REFRESH_AFTER_COMMAND_MS) {
-    clearTimeout(this.refreshTimers.get(serial));
+    if (this.refreshTimers.has(serial)) {
+      this.cancel(this.refreshTimers.get(serial));
+    }
     this.refreshTimers.set(
       serial,
       this.schedule(() => {
@@ -602,8 +727,9 @@ export class RokuManager extends EventEmitter {
   }
 
   stop() {
+    this.stopPolling();
     for (const timer of this.refreshTimers.values()) {
-      clearTimeout(timer);
+      this.cancel(timer);
     }
     this.refreshTimers.clear();
   }
