@@ -10,6 +10,14 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-22
+
+### Security
+
+- Rebuilt on Node.js 24.22.1, the October 2026 security release (remote code
+  execution in the Brotli decoder, CVE-2026-111497; TLS hostname and DNS
+  fixes).
+
 ## [1.1.1] - 2026-10-13
 
 ### Fixed
@@ -105,7 +113,8 @@ the notes of the version's GitHub Release.
   mobile apps" set to Limited or Disabled), with the setting to change.
 - Optional debug logs of every request sent to the Rokus.
 
-[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/guim31/gladys-roku/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/guim31/gladys-roku/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/guim31/gladys-roku/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/guim31/gladys-roku/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/guim31/gladys-roku/compare/v1.0.3...v1.0.4
