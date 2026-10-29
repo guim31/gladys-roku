@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------
 
 # Official Docker image through its ECR Public mirror: Docker Hub rate-limits anonymous pulls (429) from shared CI runners.
-FROM public.ecr.aws/docker/library/node:24-alpine
+FROM mirror.gcr.io/library/node:24-alpine
 
 # dumb-init: handles signals (SIGTERM) correctly for a graceful shutdown.
 RUN apk add --no-cache dumb-init
